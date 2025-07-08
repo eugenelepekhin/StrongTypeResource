@@ -6,20 +6,20 @@ To kick off the generation of strongly typed resources, you need to replace stan
 You can do this in Visual Studio by right-clicking on the .resx file, selecting Properties, and changing the Custom Tool property.
 Alternatively, you can edit your .csproj file directly. Here is an example of how to do this:
 ```xml
-	<ItemGroup>
-		<EmbeddedResource Update="Resources\Text.resx">
-			<Generator>StrongTypeResource.internal</Generator>
-		</EmbeddedResource>
-	</ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Update="Resources\Text.resx">
+            <Generator>StrongTypeResource.internal</Generator>
+        </EmbeddedResource>
+    </ItemGroup>
 ```
 You can also specify the `StrongTypeResource.public` generator if you want to make the generated class public.
 This is useful if you want to access the resources from other projects or assemblies. Also, in WPF to be available in binding expressions.
 ```xml
-	<ItemGroup>
-		<EmbeddedResource Update="Resources\Text.resx">
-			<Generator>StrongTypeResource.public</Generator>
-		</EmbeddedResource>
-	</ItemGroup
+    <ItemGroup>
+        <EmbeddedResource Update="Resources\Text.resx">
+            <Generator>StrongTypeResource.public</Generator>
+        </EmbeddedResource>
+    </ItemGroup>
 ```
 In the .resx file if you define a string without any formating, it will be generated as a property of type `string`.
 If you define a string with formatting, it will be generated as a method that takes parameters.
@@ -35,6 +35,9 @@ You need to add a comment like this in the .resx file:
 This will generate a method `FoundItems(int itemCount, double seconds)` in the generated class.
 
 If you want to deal with formatting yourself, you can cancel generation of the method by adding - (minus character) in the first position of the comment.
+Such strings will be generated as properties of type `string`.
+
+In WPF projects the tool will also generate property `FlowDirection`. This is helper property to set FlowDirection of the control in XAML.
 
 ## Pseudo resources
 It is usefull for testing purposes to generate pseudo resources that return longer and not Latin characters strings.
@@ -45,9 +48,9 @@ To enable pseudo resources, you need to define Conditional symbol Pseudo in the 
 To help with transition from old resources to StrongTypeResource, you can declare the `StrongTypeResourceOptionalParameters` property in your .csproj file.
 This will allow you to use the old resource format with optional parameters.
 ```xml
-	<PropertyGroup>
-		<StrongTypeResourceOptionalParameters>true</StrongTypeResourceOptionalParameters>
-	</PropertyGroup>
+    <PropertyGroup>
+        <StrongTypeResourceOptionalParameters>true</StrongTypeResourceOptionalParameters>
+    </PropertyGroup>
 ```
 
 ## Verification of satellite .resx files
