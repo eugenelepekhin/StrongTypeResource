@@ -14,6 +14,7 @@
 		<PackageTags>msbuild resx strong-type resource generator</PackageTags>
 		<PackageReadmeFile>readme.md</PackageReadmeFile>
 		<Title>Strong Type Resource Generator</Title>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 	</PropertyGroup>
 
 	<ItemGroup>
