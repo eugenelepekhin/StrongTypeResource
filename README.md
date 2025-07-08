@@ -2,3 +2,5 @@
 StrongTypeResource package allows to access to .net resources via strongly typed methods and properties and does extra verification of satellite .resx files.
 
 Please see [StrongTypeResource package read me](StrongTypeResource/readme.md) for detailed usage instructions.
+
+Here is a NuGet package link: [StrongTypeResource](https://www.nuget.org/packages/EugeneLepekhin.StrongTypeResource/)
