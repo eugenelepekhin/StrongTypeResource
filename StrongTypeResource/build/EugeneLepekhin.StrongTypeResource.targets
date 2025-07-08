@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+	<UsingTask TaskName="StrongTypeResourceGenerator" AssemblyFile="$(MSBuildThisFileDirectory)..\lib\netstandard2.0\StrongTypeResource.dll"/>
+
+	<Target Name="GenerateStrongTypeResourceWrappers"
+		BeforeTargets="BeforeCompile;BeforeBuild"
+		Condition="('$(DesignTimeBuild)' == 'true' OR '$(BuildingProject)' == 'true') AND '@(EmbeddedResource)' != ''"
+	>
+		<PropertyGroup>
+			<PseudoSymbolDefined>$(DefineConstants.Contains("Pseudo"))</PseudoSymbolDefined>
+			<NullableEnabled>$(Nullable.Equals("enable", StringComparison.OrdinalIgnoreCase))</NullableEnabled>
+			<FlowDirection>$(UseWPF.Equals("true", StringComparison.OrdinalIgnoreCase))</FlowDirection>
+			<OptionalParameters>$(StrongTypeResourceOptionalParameters.Equals("true", StringComparison.OrdinalIgnoreCase))</OptionalParameters>
+		</PropertyGroup>
+
+		<StrongTypeResourceGenerator
+			ProjectDirectory="$(MSBuildProjectDirectory)"
+			ResxFiles="@(EmbeddedResource)"
+			IntermediateOutputPath="$(IntermediateOutputPath)"
+			RootNamespace="$(RootNamespace)"
+			NullableEnabled="$(NullableEnabled)"
+			PseudoCulture="$(PseudoSymbolDefined)"
+			FlowDirection="$(FlowDirection)"
+			OptionalParameters="$(OptionalParameters)"
+		>
+			<Output TaskParameter="ResourceWrapperFiles" ItemName="ResourceWrapperFiles"/>
+		</StrongTypeResourceGenerator>
+
+		<ItemGroup>
+			<Compile Include="@(ResourceWrapperFiles)" Visible="true"/>
+		</ItemGroup>
+	</Target>
+</Project>

@@ -1,0 +1,48 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<LangVersion>latest</LangVersion>
+		<Nullable>enable</Nullable>
+		<PlatformTarget>AnyCPU</PlatformTarget>
+
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageId>EugeneLepekhin.StrongTypeResource</PackageId>
+		<PackageVersion>1.0.0</PackageVersion>
+		<Authors>Eugene Lepekhin</Authors>
+		<Description>StrongTypeResource package allows to access to .net resources via strongly typed methods and properties and does extra verification of satellite .resx files.</Description>
+		<PackageTags>msbuild resx strong-type resource generator</PackageTags>
+		<PackageReadmeFile>readme.md</PackageReadmeFile>
+		<Title>Strong Type Resource Generator</Title>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Build.Framework" Version="17.14.8" />
+		<PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.14.8" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Update="WrapperGenerator.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>WrapperGenerator.tt</DependentUpon>
+		</Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Update="WrapperGenerator.tt">
+			<Generator>TextTemplatingFilePreprocessor</Generator>
+			<LastGenOutput>WrapperGenerator.cs</LastGenOutput>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="readme.md" Pack="True" PackagePath="\" />
+		<None Include="build\**" Pack="true" PackagePath="build\" />
+	</ItemGroup>
+
+</Project>
