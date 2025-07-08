@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -31,6 +32,7 @@ namespace StrongTypeResource {
 		/// The list is available via the @(EmbeddedResource) items group.
 		/// </summary>
 		[Required]
+		[SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
 		public ITaskItem[]? ResxFiles { get; set; } = null;
 
 		/// <summary>
@@ -74,6 +76,7 @@ namespace StrongTypeResource {
 		/// Output parameter: the list of generated resource wrapper files.
 		/// </summary>
 		[Output]
+		[SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
 		public ITaskItem[]? ResourceWrapperFiles { get; set; } = null;
 
 		private sealed class ResourceGroup {

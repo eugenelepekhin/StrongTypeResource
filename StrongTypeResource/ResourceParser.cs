@@ -186,7 +186,7 @@ namespace StrongTypeResource {
 		private ResourceItem? GenerateString(string name, string value, string comment) {
 			ResourceItem item = new ResourceItem(name, value, "string");
 
-			if(!comment.StartsWith("-")) {
+			if(!comment.StartsWith("-", StringComparison.Ordinal)) {
 				if(!this.IsVariantList(item, value, comment)) {
 					this.ParseFormatParameters(item, value, comment);
 				}
