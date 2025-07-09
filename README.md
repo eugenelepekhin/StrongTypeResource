@@ -1,5 +1,34 @@
 # StrongTypeResource
-StrongTypeResource package allows to access to .net resources via strongly typed methods and properties and does extra verification of satellite .resx files.
+
+StrongTypeResource is a NuGet package that provides strongly typed access to .NET resources with additional verification of satellite .resx files.
+
+## What It Does
+
+- **Strongly Typed Access**: Generate strongly typed classes that provide safe access to your .resx resources
+- **Parameter Validation**: Automatically verify that format parameters match across different culture files
+- **Build-Time Safety**: Catch resource-related errors during compilation instead of runtime
+
+## Example
+
+Given these resources in your .resx file:
+```
+WelcomeMessage = Welcome to our application
+ItemsFound = Found {0} items in {1} seconds
+```
+
+**Traditional .NET resource generation** creates properties for both:
+```csharp
+// Both are properties - no compile-time parameter validation
+string message = Resources.WelcomeMessage;
+string formatted = string.Format(Resources.ItemsFound, count, time); // Easy to mess up parameters
+```
+
+**With StrongTypeResource** (using comment `{int count, double time}` for ItemsFound):
+```csharp
+// Simple strings remain properties, formatted strings become type-safe methods
+string message = Resources.WelcomeMessage;
+string formatted = Resources.ItemsFound(count, time); // Compile-time parameter validation
+```
 
 Please see [StrongTypeResource package read me](StrongTypeResource/readme.md) for detailed usage instructions.
 

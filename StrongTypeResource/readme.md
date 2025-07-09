@@ -1,59 +1,137 @@
 ﻿# StrongTypeResource
-StrongTypeResource package allows to access to .net resources via strongly typed methods and properties and does extra verification of satellite .resx files.
-## Usage
-To use the StrongTypeResource, you need to install the nuget package. Add resource files to your project.
-To kick off the generation of strongly typed resources, you need to replace standard Custom Tool for your .resx files with `StrongTypeResource.internal` or `StrongTypeResource.public`.
-You can do this in Visual Studio by right-clicking on the .resx file, selecting Properties, and changing the Custom Tool property.
-Alternatively, you can edit your .csproj file directly. Here is an example of how to do this:
-```xml
-    <ItemGroup>
-        <EmbeddedResource Update="Resources\Text.resx">
-            <Generator>StrongTypeResource.internal</Generator>
-        </EmbeddedResource>
-    </ItemGroup>
+
+StrongTypeResource is a NuGet package that provides strongly typed access to .NET resources with additional verification of satellite .resx files.
+
+## What It Does
+
+- **Strongly Typed Access**: Generate strongly typed classes that provide safe access to your .resx resources
+- **Parameter Validation**: Automatically verify that format parameters match across different culture files
+- **Build-Time Safety**: Catch resource-related errors during compilation instead of runtime
+
+## Example
+
+Given these resources in your .resx file:
 ```
-You can also specify the `StrongTypeResource.public` generator if you want to make the generated class public.
-This is useful if you want to access the resources from other projects or assemblies. Also, in WPF to be available in binding expressions.
-```xml
-    <ItemGroup>
-        <EmbeddedResource Update="Resources\Text.resx">
-            <Generator>StrongTypeResource.public</Generator>
-        </EmbeddedResource>
-    </ItemGroup>
+WelcomeMessage = Welcome to our application
+ItemsFound = Found {0} items in {1} seconds
 ```
-In the .resx file if you define a string without any formating, it will be generated as a property of type `string`.
-If you define a string with formatting, it will be generated as a method that takes parameters.
-For the parameters to be generated correctly, you need to add in comment list of parameters in curly braces `{}`.
-For example, if you have a resource string named FoundItems:
+
+**Traditional .NET resource generation** creates properties for both:
+```csharp
+// Both are properties - no compile-time parameter validation
+string message = Resources.WelcomeMessage;
+string formatted = string.Format(Resources.ItemsFound, count, time); // Easy to mess up parameters
+```
+
+**With StrongTypeResource** (using comment `{int count, double time}` for ItemsFound):
+```csharp
+// Simple strings remain properties, formatted strings become type-safe methods
+string message = Resources.WelcomeMessage;
+string formatted = Resources.ItemsFound(count, time); // Compile-time parameter validation
+```
+
+## Getting Started
+
+### 1. Install the Package
+Add the StrongTypeResource NuGet package to your project.
+
+### 2. Configure Your Resource Files
+Replace the default Custom Tool for your .resx files with one of these generators:
+- `StrongTypeResource.internal` - Creates internal class
+- `StrongTypeResource.public` - Creates public class (useful for cross-project access and WPF binding)
+
+#### Option A: Using Visual Studio
+1. Right-click your .resx file
+2. Select **Properties**
+3. Change **Custom Tool** to `StrongTypeResource.internal` or `StrongTypeResource.public`
+
+#### Option B: Edit .csproj Directly
+```xml
+<ItemGroup>
+    <EmbeddedResource Update="Resources\Text.resx">
+        <Generator>StrongTypeResource.internal</Generator>
+    </EmbeddedResource>
+</ItemGroup>
+```
+
+For public access (recommended for WPF projects):
+```xml
+<ItemGroup>
+    <EmbeddedResource Update="Resources\Text.resx">
+        <Generator>StrongTypeResource.public</Generator>
+    </EmbeddedResource>
+</ItemGroup>
+```
+
+## How Resources Are Generated
+
+### Simple Strings → Properties
+Plain strings without formatting become `string` properties:
+```
+Welcome=Welcome to our application
+```
+Generates: `string Welcome { get; }`
+
+### Formatted Strings → Methods
+Strings with placeholders become methods with parameters. You must specify parameter types in the comment field:
+
+**Resource Value:**
 ```
 Found {0} items in {1} seconds.
 ```
-You need to add a comment like this in the .resx file:
+
+**Comment:**
 ```csharp
 {int itemCount, double seconds}
 ```
-This will generate a method `FoundItems(int itemCount, double seconds)` in the generated class.
 
-If you want to deal with formatting yourself, you can cancel generation of the method by adding - (minus character) in the first position of the comment.
-Such strings will be generated as properties of type `string`.
-
-In WPF projects the tool will also generate property `FlowDirection`. This is helper property to set FlowDirection of the control in XAML.
-
-## Pseudo resources
-It is usefull for testing purposes to generate pseudo resources that return longer and not Latin characters strings.
-You will be able to read and understand pseudo string, so you can interact with UI.
-To enable pseudo resources, you need to define Conditional symbol Pseudo in the project.
-
-## Transition from old resources
-To help with transition from old resources to StrongTypeResource, you can declare the `StrongTypeResourceOptionalParameters` property in your .csproj file.
-This will allow you to use the old resource format with optional parameters.
-```xml
-    <PropertyGroup>
-        <StrongTypeResourceOptionalParameters>true</StrongTypeResourceOptionalParameters>
-    </PropertyGroup>
+**Generated Method:**
+```csharp
+string FoundItems(int itemCount, double seconds)
 ```
 
-## Verification of satellite .resx files
-StrongTypeResource performs verification of satellite .resx files to ensure that format parameter match the main .resx file.
-This is done to prevent runtime errors when using resources in different cultures.
-The verification is done during the build process and will report any discrepancies in the Output window of Visual Studio.
+### Skip Method Generation
+To generate a formatted string as a property instead of a method, add a minus (`-`) at the beginning of the comment:
+```
+-This will be a property, not a method
+```
+
+## Special Features
+
+### WPF Support
+In WPF projects, the tool automatically generates a `FlowDirection` helper property for XAML binding.
+
+### Pseudo Resources (Testing)
+Generate longer, non-Latin character strings for UI testing while keeping them readable. This helps you test how your UI handles:
+- **Longer text**: Pseudo strings are typically 30-50% longer than original text
+- **Different character sets**: Uses accented and non-Latin characters to simulate international content
+- **Layout issues**: Helps identify truncation, wrapping, and spacing problems before deploying to different cultures
+
+For example, `"Save"` might become `"[Šàvë!!!!]"` - longer and using accented characters, but still readable for testing.
+
+**Enable pseudo resources:**
+```xml
+<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+  <DefineConstants>$(DefineConstants);Pseudo</DefineConstants>
+</PropertyGroup>
+```
+
+### Legacy Compatibility
+For transitioning from old resource systems to StrongTypeResource, enable optional parameters to generate warnings instead of errors for formatted strings without proper parameter comments:
+
+```xml
+<PropertyGroup>
+    <StrongTypeResourceOptionalParameters>true</StrongTypeResourceOptionalParameters>
+</PropertyGroup>
+```
+
+This allows you to gradually migrate your resources - formatted strings without parameter comments will still generate properties (like traditional resources) but with build warnings reminding you to add parameter definitions to get full strongly typed benefits.
+
+## Automatic Verification
+
+StrongTypeResource automatically verifies that:
+- Format parameters match between main and satellite .resx files
+- All cultures have consistent parameter types and counts
+- Potential runtime errors are caught at build time
+
+Verification results appear in Visual Studio's Output window during build.
