@@ -5,15 +5,15 @@
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
 		<PlatformTarget>AnyCPU</PlatformTarget>
-		<Version>1.0.1</Version>
+		<Version>1.0.2</Version>
 		<AnalysisLevel>latest-all</AnalysisLevel>
 
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>EugeneLepekhin.StrongTypeResource</PackageId>
 		<PackageVersion>$(Version)</PackageVersion>
 		<Authors>Eugene Lepekhin</Authors>
-		<Description>StrongTypeResource package allows to access to .net resources via strongly typed methods and properties and does extra verification of satellite .resx files.</Description>
-		<PackageTags>msbuild resx strong-type resource generator</PackageTags>
+		<Description>StrongTypeResource is a NuGet package that provides strongly typed access to .NET resources with additional verification of satellite .resx files.</Description>
+		<PackageTags>msbuild resx strong-type resource generator verification</PackageTags>
 		<PackageReadmeFile>readme.md</PackageReadmeFile>
 		<Title>Strong Type Resource Wrapper Generator</Title>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
