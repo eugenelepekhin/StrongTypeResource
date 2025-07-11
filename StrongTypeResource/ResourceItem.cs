@@ -40,12 +40,11 @@ namespace StrongTypeResource {
 					comment.Append(line[0].Trim());
 					int max = Math.Min(3, line.Length);
 					string format = "\t\t/// {0}";
-					for(int i = 1; i < line.Length && max > 0; i++) {
+					for(int i = 1; i < max; i++) {
 						string s = line[i].Trim();
 						if(s.Length > 0) {
 							comment.AppendLine();
 							comment.AppendFormat(CultureInfo.InvariantCulture, format, s);
-							max--;
 						}
 					}
 					return comment.ToString();

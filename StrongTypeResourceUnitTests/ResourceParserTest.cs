@@ -105,6 +105,48 @@ namespace StrongTypeResourceUnitTests {
 		}
 
 		[TestMethod]
+		public void EmptyValueTest() {
+			string expected = string.Empty;
+			string path = this.WriteFile(R(
+				R("a", expected, "{int i, int j}")
+			));
+			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], this.ThrowOnErrorMessage, this.ThrowOnErrorMessage);
+			Assert.AreEqual(1, actual.Count());
+			ResourceItem item = actual.First();
+			Assert.IsNotNull(item);
+			Assert.AreEqual("a", item.Name);
+			Assert.AreEqual(expected, item.Value);
+			Assert.IsNull(item.LocalizationVariants);
+			Assert.IsNull(item.Parameters);
+			string comment = item.Comment();
+			this.TestContext.WriteLine($"Comment: {comment}");
+			Assert.AreEqual(0, comment.Length);
+		}
+
+		[TestMethod]
+		public void MultiLineCommentTest() {
+			string expected = "first line\nsecond line\nthird line\nforth line\nfifth line";
+			string path = this.WriteFile(R(
+				R("a", expected, "{int i, int j}")
+			));
+			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], this.ThrowOnErrorMessage, this.ThrowOnErrorMessage);
+			Assert.AreEqual(1, actual.Count());
+			ResourceItem item = actual.First();
+			Assert.IsNotNull(item);
+			Assert.AreEqual("a", item.Name);
+			Assert.AreEqual(expected, item.Value);
+			Assert.IsNull(item.LocalizationVariants);
+			Assert.IsNull(item.Parameters);
+			string comment = item.Comment();
+			this.TestContext.WriteLine($"Comment: {comment}");
+			StringAssert.Matches(comment, new Regex(@"first line", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Singleline));
+			StringAssert.Matches(comment, new Regex(@"second line", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Singleline));
+			StringAssert.Matches(comment, new Regex(@"third line", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Singleline));
+			StringAssert.DoesNotMatch(comment, new Regex(@"forth line", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Singleline));
+			StringAssert.DoesNotMatch(comment, new Regex(@"fifth line", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Singleline));
+		}
+
+		[TestMethod]
 		public void WarningMissingParameterDeclarationTest() {
 			string expected = "d{0}c{1}";
 			string path = this.WriteFile(R(
