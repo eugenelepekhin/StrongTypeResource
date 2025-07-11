@@ -16,7 +16,7 @@
 		<StrongTypeResourceGenerator
 			ProjectDirectory="$(MSBuildProjectDirectory)"
 			ResxFiles="@(EmbeddedResource)"
-			IntermediateOutputPath="$(IntermediateOutputPath)"
+			CodeOutputPath="$(IntermediateOutputPath)"
 			RootNamespace="$(RootNamespace)"
 			NullableEnabled="$(NullableEnabled)"
 			PseudoCulture="$(PseudoSymbolDefined)"

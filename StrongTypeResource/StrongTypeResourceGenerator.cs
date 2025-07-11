@@ -16,7 +16,7 @@ namespace StrongTypeResource {
 	/// </summary>
 	/// <remarks>This task processes .resx files specified in the <see cref="ResxFiles"/> property and generates C#
 	/// code files containing strongly-typed resource wrappers. The generated files are placed in the directory specified
-	/// by <see cref="IntermediateOutputPath"/>. The task supports customization of namespaces and class visibility based
+	/// by <see cref="CodeOutputPath"/>. The task supports customization of namespaces and class visibility based
 	/// on metadata in the .resx files.</remarks>
 	public class StrongTypeResourceGenerator : Task {
 		/// <summary>
@@ -36,11 +36,11 @@ namespace StrongTypeResource {
 		public ITaskItem[]? ResxFiles { get; set; } = null;
 
 		/// <summary>
-		/// The root directory for the generated C# code files.
-		/// This is available via the $(IntermediateOutputPath) property in the build process.
+		/// The root directory for the generated C# code files relative to ProjectDirectory.
+		/// This is usually available via the $(IntermediateOutputPath) property in the build process.
 		/// </summary>
 		[Required]
-		public string? IntermediateOutputPath { get; set; }
+		public string? CodeOutputPath { get; set; }
 
 		/// <summary>
 		/// The root namespace of the project.
@@ -114,8 +114,8 @@ namespace StrongTypeResource {
 				this.LogError("StrongTypeResourceGenerator: ProjectDirectory is not set.");
 				return false;
 			}
-			if(string.IsNullOrWhiteSpace(this.IntermediateOutputPath)) {
-				this.LogError("StrongTypeResourceGenerator: IntermediateOutputPath is not set.");
+			if(string.IsNullOrWhiteSpace(this.CodeOutputPath)) {
+				this.LogError("StrongTypeResourceGenerator: CodeOutputPath is not set.");
 				return false;
 			}
 			if(string.IsNullOrWhiteSpace(this.RootNamespace)) {
@@ -123,7 +123,7 @@ namespace StrongTypeResource {
 				return false;
 			}
 			if (this.ResxFiles != null && 0 < this.ResxFiles.Length) {
-				this.IntermediateOutputPath = this.IntermediateOutputPath!.Trim();
+				this.CodeOutputPath = this.CodeOutputPath!.Trim();
 				this.RootNamespace = this.RootNamespace!.Trim();
 
 				List<ResourceGroup> groups = this.BuildGroups();
@@ -172,7 +172,7 @@ namespace StrongTypeResource {
 						ResourceGroup group = new ResourceGroup(
 							itemSpec: resourcePath,
 							resxPath: Path.Combine(this.ProjectDirectory,  resourcePath),
-							codePath: Path.Combine(this.ProjectDirectory, this.IntermediateOutputPath, resourceRoot, resourceFile + ".resx.cs"),
+							codePath: Path.Combine(this.CodeOutputPath, resourceRoot, resourceFile + ".resx.cs"),
 							name: resourceName,
 							nameSpace: nameSpace,
 							className: resourceFile.Replace('.', '_'),
@@ -211,7 +211,7 @@ namespace StrongTypeResource {
 				);
 				if(errors == 0) {
 					WrapperGenerator wrapper = new WrapperGenerator(group.Namespace, group.ClassName, group.Name, group.IsPublic, this.PseudoCulture, this.FlowDirection, this.NullableEnabled, items);
-					wrapper.Generate(group.CodePath);
+					wrapper.Generate(Path.Combine(this.ProjectDirectory, group.CodePath));
 				}
 			}
 			if(errors == 0) {
