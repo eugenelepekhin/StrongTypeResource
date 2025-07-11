@@ -29,7 +29,7 @@ namespace StrongTypeResource {
 					(string name, string value, string comment) => assign(parser.GenerateInclude(name, value, comment)),
 					(string name, string value, string comment) => assign(parser.GenerateString(name, value, comment))
 				);
-				if(parser.errorCount == 0 && parser.satellites != null) {
+				if(parser.errorCount == 0 && parser.satellites.Any()) {
 					parser.VerifySatellites(list);
 				}
 				if(parser.errorCount == 0) {
