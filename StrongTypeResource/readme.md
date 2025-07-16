@@ -4,7 +4,7 @@ StrongTypeResource is a NuGet package that provides strongly typed access to .NE
 
 ## What It Does
 
-- **Strongly Typed Access**: Generate strongly typed classes that provide safe access to your .resx resources
+- **Strongly Typed Access**: Generates a class with strongly typed properties and methods that provide safe access to your .resx resources
 - **Parameter Validation**: Automatically verify that format parameters match across different culture files
 - **Build-Time Safety**: Catch resource-related errors during compilation instead of runtime
 
@@ -37,8 +37,8 @@ Add the StrongTypeResource NuGet package to your project.
 
 ### 2. Configure Your Resource Files
 Replace the default Custom Tool for your .resx files with one of these generators:
-- `StrongTypeResource.internal` - Creates internal class
-- `StrongTypeResource.public` - Creates public class (useful for cross-project access and WPF binding)
+- `StrongTypeResource.internal` - Creates an internal class
+- `StrongTypeResource.public` - Creates a public class (useful for cross-project access and WPF binding)
 
 #### Option A: Using Visual Studio
 1. Right-click your .resx file
@@ -48,32 +48,37 @@ Replace the default Custom Tool for your .resx files with one of these generator
 #### Option B: Edit .csproj Directly
 ```xml
 <ItemGroup>
-    <EmbeddedResource Update="Resources\Text.resx">
-        <Generator>StrongTypeResource.internal</Generator>
-    </EmbeddedResource>
+  <EmbeddedResource Update="Resources\Text.resx">
+    <Generator>StrongTypeResource.internal</Generator>
+  </EmbeddedResource>
 </ItemGroup>
 ```
 
 For public access (recommended for WPF projects):
 ```xml
 <ItemGroup>
-    <EmbeddedResource Update="Resources\Text.resx">
-        <Generator>StrongTypeResource.public</Generator>
-    </EmbeddedResource>
+  <EmbeddedResource Update="Resources\Text.resx">
+    <Generator>StrongTypeResource.public</Generator>
+  </EmbeddedResource>
 </ItemGroup>
 ```
+
+### 3. Remove the Original Generated File
+In Solution Explorer, right-click on the generated file (`<YourResourceFile>.Designer.cs` next to your .resx file) and select **Delete**.
+This prevents conflicts with the new StrongTypeResource-generated code.
 
 ## How Resources Are Generated
 
 ### Simple Strings → Properties
 Plain strings without formatting become `string` properties:
 ```
-Welcome=Welcome to our application
+Welcome = Welcome to our application
 ```
 Generates: `string Welcome { get; }`
 
 ### Formatted Strings → Methods
-Strings with placeholders become methods with parameters. You must specify parameter types in the comment field:
+Strings with placeholders become methods with parameters.
+You must specify parameter types in the comment field of the main (neutral language) .resx file - comments in satellite .resx files are ignored.
 
 **Resource Value:**
 ```
@@ -96,20 +101,33 @@ To generate a formatted string as a property instead of a method, add a minus (`
 -This will be a property, not a method
 ```
 
+### Enumeration Strings
+For strings that should be restricted to specific values, add a comment with `!` followed by allowed values:
+```
+!(Value1, Value2, Value3)
+```
+This ensures the string in the main resource file or any satellite files matches one of the allowed values,
+generating a compile-time error if it doesn't match.
+
 ## Special Features
 
 ### WPF Support
 In WPF projects, the tool automatically generates a `FlowDirection` helper property for XAML binding.
 
 ### Pseudo Resources (Testing)
-Generate longer, non-Latin character strings for UI testing while keeping them readable. This helps you test how your UI handles:
+Generates longer, non-Latin character strings for UI testing while keeping them readable. This helps you test how your UI handles:
 - **Longer text**: Pseudo strings are typically 30-50% longer than original text
 - **Different character sets**: Uses accented and non-Latin characters to simulate international content
 - **Layout issues**: Helps identify truncation, wrapping, and spacing problems before deploying to different cultures
 
-For example, `"Save"` might become `"[Šàvë!!!!]"` - longer and using accented characters, but still readable for testing.
+For example, `"Save"` might become `"[-~=Šàvë=~-]"` - longer and using accented characters, but still readable for testing.
 
 **Enable pseudo resources:**
+
+#### Option A: Using Visual Studio
+In your project properties, enter `Pseudo` in the **Conditional compilation symbols** field.
+
+#### Option B: Edit .csproj Directly
 ```xml
 <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
   <DefineConstants>$(DefineConstants);Pseudo</DefineConstants>
@@ -117,15 +135,17 @@ For example, `"Save"` might become `"[Šàvë!!!!]"` - longer and using accented
 ```
 
 ### Legacy Compatibility
-For transitioning from old resource systems to StrongTypeResource, enable optional parameters to generate warnings instead of errors for formatted strings without proper parameter comments:
+For transitioning from old resource systems to StrongTypeResource,
+enable optional parameters to generate warnings instead of errors for formatted strings without proper parameter comments:
 
 ```xml
 <PropertyGroup>
-    <StrongTypeResourceOptionalParameters>true</StrongTypeResourceOptionalParameters>
+  <StrongTypeResourceOptionalParameters>true</StrongTypeResourceOptionalParameters>
 </PropertyGroup>
 ```
 
-This allows you to gradually migrate your resources - formatted strings without parameter comments will still generate properties (like traditional resources) but with build warnings reminding you to add parameter definitions to get full strongly typed benefits.
+This allows you to gradually migrate your resources - formatted strings without parameter comments will still generate properties
+(like traditional resources) but with build warnings reminding you to add parameter definitions to get full strongly typed benefits.
 
 ## Automatic Verification
 

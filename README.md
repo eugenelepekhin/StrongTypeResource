@@ -4,7 +4,7 @@ StrongTypeResource is a NuGet package that provides strongly typed access to .NE
 
 ## What It Does
 
-- **Strongly Typed Access**: Generate strongly typed classes that provide safe access to your .resx resources
+- **Strongly Typed Access**: Generates a class with strongly typed properties and methods that provide safe access to your .resx resources
 - **Parameter Validation**: Automatically verify that format parameters match across different culture files
 - **Build-Time Safety**: Catch resource-related errors during compilation instead of runtime
 
