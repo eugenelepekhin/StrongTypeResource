@@ -5,20 +5,24 @@
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
 		<PlatformTarget>AnyCPU</PlatformTarget>
-		<Version>1.0.3</Version>
+		<Version>1.0.4</Version>
 		<AnalysisLevel>latest-all</AnalysisLevel>
 
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageId>EugeneLepekhin.StrongTypeResource</PackageId>
+		<Title>StrongTypeResource</Title>
 		<PackageVersion>$(Version)</PackageVersion>
 		<Authors>Eugene Lepekhin</Authors>
 		<Description>StrongTypeResource is a NuGet package that provides strongly typed access to .NET resources with additional verification of satellite .resx files.</Description>
-		<PackageTags>msbuild resx strong-type resource generator verification</PackageTags>
+		<PackageTags>msbuild;resx;strong type;resource;generator;verification;satellite;culture</PackageTags>
 		<PackageReadmeFile>readme.md</PackageReadmeFile>
 		<Title>Strong Type Resource Wrapper Generator</Title>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageProjectUrl>https://github.com/eugenelepekhin/StrongTypeResource</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/eugenelepekhin/StrongTypeResource</RepositoryUrl>
+
+		<PackageReleaseNotes>Updating readme.md files</PackageReleaseNotes>
+		
 	</PropertyGroup>
 
 	<ItemGroup>
