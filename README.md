@@ -1,5 +1,11 @@
 # StrongTypeResource
 
+:star:  I appreciate your star, it encourages! :star:
+
+[![NuGet](https://img.shields.io/nuget/v/EugeneLepekhin.StrongTypeResource.svg)](https://www.nuget.org/packages/EugeneLepekhin.StrongTypeResource/)
+[![.NET C#](https://img.shields.io/badge/.NET-C%23-blue)](https://docs.microsoft.com/en-us/dotnet/csharp/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 StrongTypeResource is a NuGet package that provides strongly typed access to .NET resources with additional verification of satellite .resx files.
 
 ## What It Does
