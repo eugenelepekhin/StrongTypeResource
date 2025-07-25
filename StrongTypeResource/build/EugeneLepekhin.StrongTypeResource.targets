@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project>
-	<UsingTask TaskName="StrongTypeResourceGenerator" AssemblyFile="$(MSBuildThisFileDirectory)..\lib\netstandard2.0\StrongTypeResource.dll"/>
+	<UsingTask TaskName="StrongTypeResourceGenerator" AssemblyFile="$(MSBuildThisFileDirectory)..\tasks\netstandard2.0\StrongTypeResource.dll"/>
 
 	<Target Name="GenerateStrongTypeResourceWrappers"
 		BeforeTargets="BeforeCompile;BeforeBuild"
@@ -27,7 +27,8 @@
 		</StrongTypeResourceGenerator>
 
 		<ItemGroup>
-			<Compile Include="@(ResourceWrapperFiles)" Visible="true"/>
+			<Compile Remove="@(ResourceWrapperFiles)"/>
+			<Compile Include="@(ResourceWrapperFiles)"/>
 		</ItemGroup>
 	</Target>
 </Project>
