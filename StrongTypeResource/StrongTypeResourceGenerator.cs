@@ -150,8 +150,9 @@ namespace StrongTypeResource {
 			foreach(ITaskItem item in this.ResxFiles!) {
 				if(Path.GetExtension(item.ItemSpec).Equals(".resx", StringComparison.OrdinalIgnoreCase)) {
 					string generator = item.GetMetadata("Generator");
-					bool isPublic = generator == "MSBuild:StrongTypeResourcePublic" || generator == "StrongTypeResource.public";
-					bool isInternal = generator == "MSBuild:StrongTypeResourceInternal" || generator == "StrongTypeResource.internal";
+					bool generatorIs(string value) => string.Equals(generator, value, StringComparison.OrdinalIgnoreCase);
+					bool isPublic = generatorIs("MSBuild:StrongTypeResourcePublic") || generatorIs("StrongTypeResource.public");
+					bool isInternal = generatorIs("MSBuild:StrongTypeResourceInternal") || generatorIs("StrongTypeResource.internal");
 					if (isPublic || isInternal) {
 						string resourcePath = item.ItemSpec;
 						string resourceRoot = Path.GetDirectoryName(resourcePath) ?? string.Empty;
