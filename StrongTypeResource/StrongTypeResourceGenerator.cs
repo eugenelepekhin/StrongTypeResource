@@ -126,8 +126,6 @@ namespace StrongTypeResource {
 				this.CodeOutputPath = this.CodeOutputPath!.Trim();
 				this.RootNamespace = this.RootNamespace!.Trim();
 
-				List<ResourceGroup> groups = this.BuildGroups();
-				//this.LogInfo(groups);
 				return this.Parse();
 			}
 			return true;
@@ -152,8 +150,8 @@ namespace StrongTypeResource {
 			foreach(ITaskItem item in this.ResxFiles!) {
 				if(Path.GetExtension(item.ItemSpec).Equals(".resx", StringComparison.OrdinalIgnoreCase)) {
 					string generator = item.GetMetadata("Generator");
-					bool isPublic = generator == "StrongTypeResource.public";
-					bool isInternal = generator == "StrongTypeResource.internal";
+					bool isPublic = generator == "MSBuild:StrongTypeResourcePublic" || generator == "StrongTypeResource.public";
+					bool isInternal = generator == "MSBuild:StrongTypeResourceInternal" || generator == "StrongTypeResource.internal";
 					if (isPublic || isInternal) {
 						string resourcePath = item.ItemSpec;
 						string resourceRoot = Path.GetDirectoryName(resourcePath) ?? string.Empty;

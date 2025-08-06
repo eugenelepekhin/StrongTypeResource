@@ -4,9 +4,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.14.36221.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StrongTypeResourceTest", "StrongTypeResourceTest\StrongTypeResourceTest.csproj", "{317BD9B4-7DA3-4945-A0F6-C893F80F1E2F}"
-	ProjectSection(ProjectDependencies) = postProject
-		{82A41889-54DD-4027-8E76-0F22463B0F8F} = {82A41889-54DD-4027-8E76-0F22463B0F8F}
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StrongTypeResource", "StrongTypeResource\StrongTypeResource.csproj", "{82A41889-54DD-4027-8E76-0F22463B0F8F}"
 EndProject

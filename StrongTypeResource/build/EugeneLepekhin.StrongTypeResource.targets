@@ -2,20 +2,40 @@
 <Project>
 	<UsingTask TaskName="StrongTypeResourceGenerator" AssemblyFile="$(MSBuildThisFileDirectory)..\tasks\netstandard2.0\StrongTypeResource.dll"/>
 
-	<Target Name="GenerateStrongTypeResourceWrappers"
-		BeforeTargets="BeforeCompile;BeforeBuild"
-		Condition="('$(DesignTimeBuild)' == 'true' OR '$(BuildingProject)' == 'true') AND '@(EmbeddedResource)' != ''"
-	>
-		<PropertyGroup>
-			<PseudoSymbolDefined>$(DefineConstants.Contains("Pseudo"))</PseudoSymbolDefined>
-			<NullableEnabled>$(Nullable.Equals("enable", StringComparison.OrdinalIgnoreCase))</NullableEnabled>
-			<FlowDirection>$(UseWPF.Equals("true", StringComparison.OrdinalIgnoreCase))</FlowDirection>
-			<OptionalParameters>$(StrongTypeResourceOptionalParameters.Equals("true", StringComparison.OrdinalIgnoreCase))</OptionalParameters>
-		</PropertyGroup>
+	<ItemGroup>
+		<StrongTypeResourceResxs Remove="@(StrongTypeResourceResxs)"/>
+		<StrongTypeResourceResxs Include="@(EmbeddedResource->WithMetadataValue('Extension', '.resx'))"/>
+		<StrongTypeResourceMains Remove="@(StrongTypeResourceMains)"/>
+		<StrongTypeResourceMains Include="@(StrongTypeResourceResxs->WithMetadataValue('Generator', 'StrongTypeResource.public'))"/>
+		<StrongTypeResourceMains Include="@(StrongTypeResourceResxs->WithMetadataValue('Generator', 'StrongTypeResource.internal'))"/>
+		<StrongTypeResourceMains Include="@(StrongTypeResourceResxs->WithMetadataValue('Generator', 'MSBuild:StrongTypeResourcePublic'))"/>
+		<StrongTypeResourceMains Include="@(StrongTypeResourceResxs->WithMetadataValue('Generator', 'MSBuild:StrongTypeResourceInternal'))"/>
+		<StrongTypeResourceCodes Remove="@(StrongTypeResourceCodes)"/>
+		<StrongTypeResourceCodes Include="@(StrongTypeResourceMains->'$(IntermediateOutputPath)%(Identity).cs')"/>
+	</ItemGroup>
 
+	<PropertyGroup>
+		<PseudoSymbolDefined>$(DefineConstants.Contains("Pseudo"))</PseudoSymbolDefined>
+		<NullableEnabled>$(Nullable.Equals("enable", StringComparison.OrdinalIgnoreCase))</NullableEnabled>
+		<FlowDirection>$(UseWPF.Equals("true", StringComparison.OrdinalIgnoreCase))</FlowDirection>
+		<OptionalParameters>$(StrongTypeResourceOptionalParameters.Equals("true", StringComparison.OrdinalIgnoreCase))</OptionalParameters>
+	</PropertyGroup>
+
+	<Target Name="StrongTypeResourceWarning" BeforeTargets="GenerateStrongTypeResourceWrappers">
+		<ItemGroup>
+			<StrongTypeResourceWarningList Include="@(StrongTypeResourceResxs->WithMetadataValue('Generator', 'StrongTypeResource.public'))"/>
+			<StrongTypeResourceWarningList Include="@(StrongTypeResourceResxs->WithMetadataValue('Generator', 'StrongTypeResource.internal'))"/>
+		</ItemGroup>
+
+		<Warning Condition="'@(StrongTypeResourceWarningList)' != ''"
+			Text="Resources are using obsolete Generator: @(StrongTypeResourceWarningList). Please replace the generator with one of: MSBuild:StrongTypeResourcePublic or MSBuild:StrongTypeResourceInternal"
+		/>
+	</Target>
+
+	<Target Name="GenerateStrongTypeResourceWrappers" BeforeTargets="BeforeCompile">
 		<StrongTypeResourceGenerator
 			ProjectDirectory="$(MSBuildProjectDirectory)"
-			ResxFiles="@(EmbeddedResource)"
+			ResxFiles="@(StrongTypeResourceResxs)"
 			CodeOutputPath="$(IntermediateOutputPath)"
 			RootNamespace="$(RootNamespace)"
 			NullableEnabled="$(NullableEnabled)"
@@ -27,8 +47,66 @@
 		</StrongTypeResourceGenerator>
 
 		<ItemGroup>
+			<Compile Remove="@(StrongTypeResourceCodes)"/>
 			<Compile Remove="@(ResourceWrapperFiles)"/>
-			<Compile Include="@(ResourceWrapperFiles)"/>
+			<Compile Include="@(StrongTypeResourceCodes)"/>
+		</ItemGroup>
+
+		<ItemGroup>
+			<StrongTypeResourceCodes Remove="@(StrongTypeResourceCodes)"/>
+			<StrongTypeResourceCodes Include="@(ResourceWrapperFiles)"/>
+		</ItemGroup>
+	</Target>
+
+	<Target Name="StrongTypeResourcePublic">
+		<StrongTypeResourceGenerator
+			ProjectDirectory="$(MSBuildProjectDirectory)"
+			ResxFiles="@(StrongTypeResourceMains)"
+			CodeOutputPath="$(IntermediateOutputPath)"
+			RootNamespace="$(RootNamespace)"
+			NullableEnabled="$(NullableEnabled)"
+			PseudoCulture="$(PseudoSymbolDefined)"
+			FlowDirection="$(FlowDirection)"
+			OptionalParameters="$(OptionalParameters)"
+		>
+			<Output TaskParameter="ResourceWrapperFiles" ItemName="ResourceWrapperFiles"/>
+		</StrongTypeResourceGenerator>
+
+		<ItemGroup>
+			<Compile Remove="@(StrongTypeResourceCodes)"/>
+			<Compile Remove="@(ResourceWrapperFiles)"/>
+			<Compile Include="@(StrongTypeResourceCodes)"/>
+		</ItemGroup>
+
+		<ItemGroup>
+			<StrongTypeResourceCodes Remove="@(StrongTypeResourceCodes)"/>
+			<StrongTypeResourceCodes Include="@(ResourceWrapperFiles)"/>
+		</ItemGroup>
+	</Target>
+
+	<Target Name="StrongTypeResourceInternal">
+		<StrongTypeResourceGenerator
+			ProjectDirectory="$(MSBuildProjectDirectory)"
+			ResxFiles="@(StrongTypeResourceMains)"
+			CodeOutputPath="$(IntermediateOutputPath)"
+			RootNamespace="$(RootNamespace)"
+			NullableEnabled="$(NullableEnabled)"
+			PseudoCulture="$(PseudoSymbolDefined)"
+			FlowDirection="$(FlowDirection)"
+			OptionalParameters="$(OptionalParameters)"
+		>
+			<Output TaskParameter="ResourceWrapperFiles" ItemName="ResourceWrapperFiles"/>
+		</StrongTypeResourceGenerator>
+
+		<ItemGroup>
+			<Compile Remove="@(StrongTypeResourceCodes)"/>
+			<Compile Remove="@(ResourceWrapperFiles)"/>
+			<Compile Include="@(StrongTypeResourceCodes)"/>
+		</ItemGroup>
+
+		<ItemGroup>
+			<StrongTypeResourceCodes Remove="@(StrongTypeResourceCodes)"/>
+			<StrongTypeResourceCodes Include="@(ResourceWrapperFiles)"/>
 		</ItemGroup>
 	</Target>
 </Project>
