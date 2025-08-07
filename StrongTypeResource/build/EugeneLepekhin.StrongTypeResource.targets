@@ -10,8 +10,6 @@
 		<StrongTypeResourceMains Include="@(StrongTypeResourceResxs->WithMetadataValue('Generator', 'StrongTypeResource.internal'))"/>
 		<StrongTypeResourceMains Include="@(StrongTypeResourceResxs->WithMetadataValue('Generator', 'MSBuild:StrongTypeResourcePublic'))"/>
 		<StrongTypeResourceMains Include="@(StrongTypeResourceResxs->WithMetadataValue('Generator', 'MSBuild:StrongTypeResourceInternal'))"/>
-		<StrongTypeResourceCodes Remove="@(StrongTypeResourceCodes)"/>
-		<StrongTypeResourceCodes Include="@(StrongTypeResourceMains->'$(IntermediateOutputPath)%(Identity).cs')"/>
 	</ItemGroup>
 
 	<PropertyGroup>
@@ -47,14 +45,8 @@
 		</StrongTypeResourceGenerator>
 
 		<ItemGroup>
-			<Compile Remove="@(StrongTypeResourceCodes)"/>
 			<Compile Remove="@(ResourceWrapperFiles)"/>
-			<Compile Include="@(StrongTypeResourceCodes)"/>
-		</ItemGroup>
-
-		<ItemGroup>
-			<StrongTypeResourceCodes Remove="@(StrongTypeResourceCodes)"/>
-			<StrongTypeResourceCodes Include="@(ResourceWrapperFiles)"/>
+			<Compile Include="@(ResourceWrapperFiles)"/>
 		</ItemGroup>
 	</Target>
 
@@ -73,14 +65,8 @@
 		</StrongTypeResourceGenerator>
 
 		<ItemGroup>
-			<Compile Remove="@(StrongTypeResourceCodes)"/>
 			<Compile Remove="@(ResourceWrapperFiles)"/>
-			<Compile Include="@(StrongTypeResourceCodes)"/>
-		</ItemGroup>
-
-		<ItemGroup>
-			<StrongTypeResourceCodes Remove="@(StrongTypeResourceCodes)"/>
-			<StrongTypeResourceCodes Include="@(ResourceWrapperFiles)"/>
+			<Compile Include="@(ResourceWrapperFiles)"/>
 		</ItemGroup>
 	</Target>
 
@@ -99,14 +85,8 @@
 		</StrongTypeResourceGenerator>
 
 		<ItemGroup>
-			<Compile Remove="@(StrongTypeResourceCodes)"/>
 			<Compile Remove="@(ResourceWrapperFiles)"/>
-			<Compile Include="@(StrongTypeResourceCodes)"/>
-		</ItemGroup>
-
-		<ItemGroup>
-			<StrongTypeResourceCodes Remove="@(StrongTypeResourceCodes)"/>
-			<StrongTypeResourceCodes Include="@(ResourceWrapperFiles)"/>
+			<Compile Include="@(ResourceWrapperFiles)"/>
 		</ItemGroup>
 	</Target>
 </Project>
