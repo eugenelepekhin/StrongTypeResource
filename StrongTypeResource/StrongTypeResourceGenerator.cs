@@ -79,6 +79,8 @@ namespace StrongTypeResource {
 		[SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
 		public ITaskItem[]? ResourceWrapperFiles { get; set; } = null;
 
+		internal bool LogToConsole { get; set; }
+
 		private sealed class ResourceGroup {
 			public string ItemSpec { get; }
 			public string ResxPath { get; }
@@ -132,15 +134,27 @@ namespace StrongTypeResource {
 		}
 
 		private void LogError(string message) {
-			this.Log.LogError(message);
+			if (this.LogToConsole) {
+				Console.Error.WriteLine(message);
+			} else {
+				this.Log.LogError(message);
+			}
 		}
 
 		private void LogWarning(string message) {
-			this.Log.LogWarning(message);
+			if (this.LogToConsole) {
+				Console.WriteLine(message);
+			} else {
+				this.Log.LogWarning(message);
+			}
 		}
 
 		private void LogMessage(string message) {
-			this.Log.LogMessage(MessageImportance.High, message);
+			if (this.LogToConsole) {
+				Console.WriteLine(message);
+			} else {
+				this.Log.LogMessage(MessageImportance.High, message);
+			}
 		}
 
 		private List<ResourceGroup> BuildGroups() {

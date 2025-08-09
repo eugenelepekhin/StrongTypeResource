@@ -10,10 +10,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\StrongTypeResourceTest\StrongTypeResourceTest.csproj" />
     <ProjectReference Include="..\StrongTypeResource\StrongTypeResource.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Build.Utilities.Core" Version="17.14.8" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="MSTest" Version="3.10.1" />
   </ItemGroup>
