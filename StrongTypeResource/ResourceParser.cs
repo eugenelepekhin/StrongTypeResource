@@ -187,8 +187,8 @@ namespace StrongTypeResource {
 			ResourceItem item = new ResourceItem(name, value, "string");
 
 			if(!comment.StartsWith("-", StringComparison.Ordinal)) {
-				if(!this.IsVariantList(item, value, comment)) {
-					this.ParseFormatParameters(item, value, comment);
+				if(!this.IsVariantList(item, comment)) {
+					this.ParseFormatParameters(item, comment);
 				}
 			} else {
 				item.SuppressValidation = true;
@@ -197,7 +197,7 @@ namespace StrongTypeResource {
 			return (0 == this.errorCount) ? item : null;
 		}
 
-		private bool IsVariantList(ResourceItem item, string value, string comment) {
+		private bool IsVariantList(ResourceItem item, string comment) {
 			Match match = this.variantList.Match(comment);
 			if(match.Success) {
 				string listText = match.Groups["list"].Value;
@@ -210,15 +210,15 @@ namespace StrongTypeResource {
 					}
 				}
 				item.LocalizationVariants = list;
-				if(!list.Contains(value)) {
-					this.Error(item.Name, "Localization variants does not contain provided value: {0}", value);
+				if(!list.Contains(item.Value)) {
+					this.Error(item.Name, "Localization variants does not contain provided value: {0}", item.Value);
 				}
 			}
 			return match.Success;
 		}
 
-		private void ParseFormatParameters(ResourceItem item, string value, string comment) {
-			int count = this.ValidateFormatItems(item.Name, value, true);
+		private void ParseFormatParameters(ResourceItem item, string comment) {
+			int count = this.ValidateFormatItems(item.Name, item.Value, true);
 			if(0 < count) {
 				Match paramsMatch = this.functionParameters.Match(comment);
 				if(paramsMatch.Success) {
