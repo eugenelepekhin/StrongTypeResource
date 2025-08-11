@@ -18,7 +18,7 @@ namespace StrongTypeResource {
 		private static readonly char[] splitter = { ',' };
 
 		public static IEnumerable<ResourceItem> Parse(string file, bool enforceParameterDeclaration, IEnumerable<string> satellites, Action<string> errorMessage, Action<string> warningMessage) {
-			ResourceParser parser = new ResourceParser(enforceParameterDeclaration, satellites, errorMessage, warningMessage);
+			ResourceParser parser = new ResourceParser(file, enforceParameterDeclaration, satellites, errorMessage, warningMessage);
 
 			List<ResourceItem> list = new List<ResourceItem>();
 			void assign(ResourceItem? item) { if(item != null) { list.Add(item); } }
@@ -35,6 +35,7 @@ namespace StrongTypeResource {
 			return Enumerable.Empty<ResourceItem>();
 		}
 
+		private readonly string mainFile;
 		private string currentFile;
 		private readonly bool enforceParameterDeclaration;
 		private readonly IEnumerable<string> satellites;
@@ -51,8 +52,9 @@ namespace StrongTypeResource {
 		private readonly Action<string> errorMessage;
 		private readonly Action<string> warningMessage;
 
-		private ResourceParser(bool enforceParameterDeclaration, IEnumerable<string> satellites, Action<string> errorMessage, Action<string> warningMessage) {
+		private ResourceParser(string mainFile, bool enforceParameterDeclaration, IEnumerable<string> satellites, Action<string> errorMessage, Action<string> warningMessage) {
 			this.currentFile = string.Empty; // will be set in Parse
+			this.mainFile = mainFile;
 			this.enforceParameterDeclaration = enforceParameterDeclaration;
 			this.satellites = satellites;
 			this.errorCount = 0;
@@ -74,7 +76,7 @@ namespace StrongTypeResource {
 			using XmlReader reader = XmlReader.Create(file, xmlReaderSettings);
 			reader.MoveToContent();
 			if(reader.NodeType != XmlNodeType.Element || reader.Name != "root") {
-				this.Error("Root", "Root element is not <root>");
+				this.Error("root", "Root element is not <root>");
 				return;
 			}
 			while(reader.Read()) {
@@ -84,8 +86,14 @@ namespace StrongTypeResource {
 					string? type = null;
 					while(reader.MoveToNextAttribute()) {
 						if(reader.Name == "name") {
+							if(name != null) {
+								this.Error("data", "Resource name is duplicated: " + name);
+							}
 							name = reader.Value.Trim();
 						} else if(reader.Name == "type") {
+							if(type != null) {
+								this.Error("data", "Resource type is duplicated: " + type);
+							}
 							type = reader.Value.Trim();
 						}
 					}
@@ -103,8 +111,14 @@ namespace StrongTypeResource {
 						while(!(reader.NodeType == XmlNodeType.EndElement && reader.Name == "data")) {
 							if(reader.NodeType == XmlNodeType.Element) {
 								if(reader.Name == "value") {
+									if(value != null) {
+										this.Error(name, "Resource value is duplicated: " + value);
+									}
 									value = reader.ReadElementContentAsString(); // move to the next node
 								} else if(reader.Name == "comment") {
+									if(comment != null) {
+										this.Error(name, "Resource comment is duplicated: " + comment);
+									}
 									comment = reader.ReadElementContentAsString(); // move to the next node
 								} else {
 									this.Corrupted(name);
@@ -144,7 +158,7 @@ namespace StrongTypeResource {
 							ResourceItem? satellite = this.GenerateInclude(name, value, comment);
 							// satellite == null on errors. So, do not generate yet another one.
 							if(satellite != null && item.Type != satellite.Type) {
-								this.Error(name, "type of file resource is different in main resource file \"{0}\" and language resource file \"{1}\"", this.currentFile, file);
+								this.Error(name, "type of file resource is different in main resource file \"{0}\" and language resource file \"{1}\"", this.mainFile, file);
 							}
 						} else {
 							unknownResource(name);

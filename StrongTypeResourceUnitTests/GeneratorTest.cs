@@ -115,5 +115,13 @@ namespace StrongTypeResourceUnitTests {
 				);
 			}
 		}
+
+		[TestMethod]
+		public void ParserTest() {
+			string resxFile = Path.Combine(this.TestContext!.TestRunDirectory!, @"..\..\..\StrongTypeResourceTest\NewResx\Resources.resx");
+			Assert.IsTrue(File.Exists(resxFile), "Resx file does not exist: " + resxFile);
+			List<ResourceItem> list = ResourceParser.Parse(resxFile, true, Enumerable.Empty<string>(), s => this.TestContext!.WriteLine(s), s => this.TestContext!.WriteLine(s)).ToList();
+			Assert.AreEqual(7, list.Count, "Unexpected number of resources parsed from resx file.");
+		}
 	}
 }
