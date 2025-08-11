@@ -19,7 +19,7 @@ using System.Runtime.InteropServices;
 
 [assembly: Guid("19812e80-a682-431f-a32c-db0d2bc922a9")]
 
-[assembly: NeutralResourcesLanguageAttribute("en-US", UltimateResourceFallbackLocation.Satellite)]
+[assembly: NeutralResourcesLanguageAttribute("en-US", UltimateResourceFallbackLocation.MainAssembly)]
 
 [assembly: InternalsVisibleTo("StrongTypeResourceUnitTests")]
 
