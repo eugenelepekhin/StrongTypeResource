@@ -5,7 +5,7 @@
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
 		<PlatformTarget>AnyCPU</PlatformTarget>
-		<Version>1.0.5</Version>
+		<Version>1.1.0</Version>
 		<AnalysisLevel>latest-all</AnalysisLevel>
 
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -25,7 +25,7 @@
 		<BuildOutputTargetFolder>tasks</BuildOutputTargetFolder>
 		<NoWarn>$(NoWarn);NU5100;NU5128</NoWarn>
 
-		<PackageReleaseNotes>Updating readme.md files</PackageReleaseNotes>
+		<PackageReleaseNotes>Allow update of resource wrapper code after saving .resx file. Better tool performance.</PackageReleaseNotes>
 		
 	</PropertyGroup>
 

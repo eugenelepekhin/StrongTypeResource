@@ -41,19 +41,24 @@ Add the StrongTypeResource NuGet package to your project.
 
 ### 2. Configure Your Resource Files
 Replace the default Custom Tool for your .resx files with one of these generators:
-- `StrongTypeResource.internal` - Creates an internal class
-- `StrongTypeResource.public` - Creates a public class (useful for cross-project access and WPF binding)
+- `MSBuild:StrongTypeResourceInternal` - Creates an internal class
+- `MSBuild:StrongTypeResourcePublic` - Creates a public class (useful for cross-project access and WPF binding)
+
+> If you have been using older versions of StrongTypeResource, you will need to replace old Custom Tool `StrongTypeResource.internal` or `StrongTypeResource.public`
+with `MSBuild:StrongTypeResourceInternal` or `MSBuild:StrongTypeResourcePublic`.
+
+The new generator strings allow to generate the wrapper code after you save the .resx file, so you can see changes immediately without rebuilding the project.
 
 #### Option A: Using Visual Studio
 1. Right-click your .resx file
 2. Select **Properties**
-3. Change **Custom Tool** to `StrongTypeResource.internal` or `StrongTypeResource.public`
+3. Change **Custom Tool** to `MSBuild:StrongTypeResourceInternal` or `MSBuild:StrongTypeResourcePublic`
 
 #### Option B: Edit .csproj Directly
 ```xml
 <ItemGroup>
   <EmbeddedResource Update="Resources\Text.resx">
-    <Generator>StrongTypeResource.internal</Generator>
+    <Generator>MSBuild:StrongTypeResourceInternal</Generator>
   </EmbeddedResource>
 </ItemGroup>
 ```
@@ -62,7 +67,7 @@ For public access (recommended for WPF projects):
 ```xml
 <ItemGroup>
   <EmbeddedResource Update="Resources\Text.resx">
-    <Generator>StrongTypeResource.public</Generator>
+    <Generator>MSBuild:StrongTypeResourcePublic</Generator>
   </EmbeddedResource>
 </ItemGroup>
 ```
