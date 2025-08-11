@@ -18,32 +18,24 @@ namespace StrongTypeResource {
 		private static readonly char[] splitter = { ',' };
 
 		public static IEnumerable<ResourceItem> Parse(string file, bool enforceParameterDeclaration, IEnumerable<string> satellites, Action<string> errorMessage, Action<string> warningMessage) {
-			XmlDocument resource = new XmlDocument();
-			resource.Load(file);
-			XmlNodeList? nodeList = ResourceParser.SelectResources(resource);
-			if(nodeList != null && 0 < nodeList.Count) {
-				ResourceParser parser = new ResourceParser(file, enforceParameterDeclaration, satellites, errorMessage, warningMessage);
-				List<ResourceItem> list = new List<ResourceItem>();
-				void assign(ResourceItem? item) { if(item != null) { list.Add(item); } }
-				parser.Parse(nodeList,
-					(string name, string value, string comment) => assign(parser.GenerateInclude(name, value, comment)),
-					(string name, string value, string comment) => assign(parser.GenerateString(name, value, comment))
-				);
-				if(parser.errorCount == 0 && parser.satellites.Any()) {
-					parser.VerifySatellites(list);
-				}
-				if(parser.errorCount == 0) {
-					return list;
-				}
+			ResourceParser parser = new ResourceParser(enforceParameterDeclaration, satellites, errorMessage, warningMessage);
+
+			List<ResourceItem> list = new List<ResourceItem>();
+			void assign(ResourceItem? item) { if(item != null) { list.Add(item); } }
+			parser.Parse(file,
+				(string name, string value, string comment) => assign(parser.GenerateInclude(name, value, comment)),
+				(string name, string value, string comment) => assign(parser.GenerateString(name, value, comment))
+			);
+			if(parser.errorCount == 0 && parser.satellites.Any()) {
+				parser.VerifySatellites(list);
+			}
+			if(parser.errorCount == 0) {
+				return list;
 			}
 			return Enumerable.Empty<ResourceItem>();
 		}
 
-		private static XmlNodeList? SelectResources(XmlDocument resource) {
-			return resource.SelectNodes("/root/data");
-		}
-
-		private string fileName;
+		private string currentFile;
 		private readonly bool enforceParameterDeclaration;
 		private readonly IEnumerable<string> satellites;
 
@@ -59,8 +51,8 @@ namespace StrongTypeResource {
 		private readonly Action<string> errorMessage;
 		private readonly Action<string> warningMessage;
 
-		private ResourceParser(string file, bool enforceParameterDeclaration, IEnumerable<string> satellites, Action<string> errorMessage, Action<string> warningMessage) {
-			this.fileName = file;
+		private ResourceParser(bool enforceParameterDeclaration, IEnumerable<string> satellites, Action<string> errorMessage, Action<string> warningMessage) {
+			this.currentFile = string.Empty; // will be set in Parse
 			this.enforceParameterDeclaration = enforceParameterDeclaration;
 			this.satellites = satellites;
 			this.errorCount = 0;
@@ -69,29 +61,73 @@ namespace StrongTypeResource {
 			this.warningMessage = warningMessage;
 		}
 
-		private void Parse(XmlNodeList nodeList, Action<string, string, string> generateInclude, Action<string, string, string> generateString) {
-			foreach(XmlNode node in nodeList) {
-				XmlAttribute? nodeName = node.Attributes!["name"];
-				if(nodeName == null) {
-					this.Error("Unknown Node", "Resource name is missing");
-					continue;
-				}
-				string name = nodeName.InnerText.Trim();
-
-				XmlNode? nodeValue = node.SelectSingleNode("value");
-				if(nodeValue == null) {
-					this.Error(name, "Value missing");
-					continue;
-				}
-				string value = nodeValue.InnerText.Trim();
-
-				XmlNode? nodeComment = node.SelectSingleNode("comment");
-				string comment = (nodeComment != null) ? nodeComment.InnerText.Trim() : string.Empty;
-
-				if(node.Attributes["type"] != null) {
-					generateInclude(name, value, comment);
-				} else {
-					generateString(name, value, comment);
+		private void Parse(string file, Action<string, string, string> generateInclude, Action<string, string, string> generateString) {
+			XmlReaderSettings xmlReaderSettings = new XmlReaderSettings() {
+				CloseInput = true,
+				IgnoreComments = true,
+				IgnoreProcessingInstructions = true,
+				IgnoreWhitespace = true,
+				DtdProcessing = DtdProcessing.Prohibit, // we don't use DTD. Let's prohibit it for better security
+				XmlResolver = null // no external resources are allowed
+			};
+			this.currentFile = file;
+			using XmlReader reader = XmlReader.Create(file, xmlReaderSettings);
+			reader.MoveToContent();
+			if(reader.NodeType != XmlNodeType.Element || reader.Name != "root") {
+				this.Error("Root", "Root element is not <root>");
+				return;
+			}
+			while(reader.Read()) {
+				if(reader.NodeType == XmlNodeType.Element && reader.Name == "data") {
+					// Read <data> node
+					string? name = null;
+					string? type = null;
+					while(reader.MoveToNextAttribute()) {
+						if(reader.Name == "name") {
+							name = reader.Value.Trim();
+						} else if(reader.Name == "type") {
+							type = reader.Value.Trim();
+						}
+					}
+					if(name == null) {
+						this.Error("data", "Resource name is missing");
+						continue;
+					}
+					if(reader.IsEmptyElement) {
+						this.Error(name, "Resource value is missing");
+						continue;
+					}
+					string? value = null;
+					string? comment = null;
+					if(reader.Read()) {
+						while(!(reader.NodeType == XmlNodeType.EndElement && reader.Name == "data")) {
+							if(reader.NodeType == XmlNodeType.Element) {
+								if(reader.Name == "value") {
+									value = reader.ReadElementContentAsString(); // move to the next node
+								} else if(reader.Name == "comment") {
+									comment = reader.ReadElementContentAsString(); // move to the next node
+								} else {
+									this.Corrupted(name);
+								}
+							} else {
+								reader.Skip(); // skip text nodes and other nodes
+							}
+						}
+					}
+					if(value == null) {
+						this.Error(name, "Resource value is missing");
+						continue;
+					}
+					if(comment == null) {
+						comment = string.Empty; // no comment is ok
+					}
+					if(type != null) {
+						// It is an include
+						generateInclude(name, value, comment);
+					} else {
+						// It is a string
+						generateString(name, value, comment);
+					}
 				}
 			}
 		}
@@ -99,57 +135,50 @@ namespace StrongTypeResource {
 		private void VerifySatellites(List<ResourceItem> itemList) {
 			Dictionary<string, ResourceItem> items = new Dictionary<string, ResourceItem>(itemList.Count);
 			itemList.ForEach(i => items.Add(i.Name, i));
-			string mainFile = this.fileName;
-			void unknownResource(string name) => this.Warning(name, "resource does not exist in the main resource file \"{0}\"", mainFile);
+			void unknownResource(string name) => this.Warning(name, "resource does not exist in the main resource file \"{0}\"", this.currentFile);
 			foreach(string file in this.satellites) {
-				XmlDocument resource = new XmlDocument();
-				resource.Load(file);
-				XmlNodeList? nodeList = ResourceParser.SelectResources(resource);
-				if(nodeList != null && 0 < nodeList.Count) {
-					this.fileName = file;
-					this.Parse(nodeList,
-						(string name, string value, string comment) => {
-							if(items.TryGetValue(name, out ResourceItem? item)) {
-								ResourceItem? satellite = this.GenerateInclude(name, value, comment);
-								// satellite == null on errors. So, do not generate yet another one.
-								if(satellite != null && item.Type != satellite.Type) {
-									this.Error(name, "type of file resource is different in main resource file \"{0}\" and language resource file \"{1}\"", mainFile, file);
-								}
-							} else {
-								unknownResource(name);
+				this.currentFile = file;
+				this.Parse(file,
+					(string name, string value, string comment) => {
+						if(items.TryGetValue(name, out ResourceItem? item)) {
+							ResourceItem? satellite = this.GenerateInclude(name, value, comment);
+							// satellite == null on errors. So, do not generate yet another one.
+							if(satellite != null && item.Type != satellite.Type) {
+								this.Error(name, "type of file resource is different in main resource file \"{0}\" and language resource file \"{1}\"", this.currentFile, file);
 							}
-						},
-						(string name, string value, string comment) => {
-							if(items.TryGetValue(name, out ResourceItem? item)) {
-								if(!item.SuppressValidation) {
-									int count = this.ValidateFormatItems(name, value, false);
-									if(count != (item.Parameters == null ? 0 : item.Parameters.Count)) {
-										this.Warning(name, "number of parameters is different from the same resource in the main resource file \"{0}\"", mainFile);
-									} else if(item.LocalizationVariants != null) {
-										if(!item.LocalizationVariants.Contains(value)) {
-											this.Error(name, "provided value is not in variant list defined in main resource file: \"{0}\"", mainFile);
-										}
+						} else {
+							unknownResource(name);
+						}
+					},
+					(string name, string value, string comment) => {
+						if(items.TryGetValue(name, out ResourceItem? item)) {
+							if(!item.SuppressValidation) {
+								int count = this.ValidateFormatItems(name, value, false);
+								if(count != (item.Parameters == null ? 0 : item.Parameters.Count)) {
+									this.Warning(name, "number of parameters is different from the same resource in the main resource file \"{0}\"", this.currentFile);
+								} else if(item.LocalizationVariants != null) {
+									if(!item.LocalizationVariants.Contains(value)) {
+										this.Error(name, "provided value is not in variant list defined in main resource file: \"{0}\"", this.currentFile);
 									}
 								}
-							} else {
-								unknownResource(name);
 							}
+						} else {
+							unknownResource(name);
 						}
-					);
-				}
+					}
+				);
 			}
-			this.fileName = mainFile;
 		}
 
 		private bool Error(string nodeName, string errorText, params object[] args) {
 			//"C:\Projects\TestApp\TestApp\Subfolder\TextMessage.resx(10,1): error URW001: nodeName: my error"
-			this.errorMessage($"{this.fileName}(1,1): error URW001: {nodeName}: {ResourceParser.Format(errorText, args)}");
+			this.errorMessage($"{this.currentFile}(1,1): error URW001: {nodeName}: {ResourceParser.Format(errorText, args)}");
 			this.errorCount++;
 			return false;
 		}
 
 		private void Warning(string nodeName, string errorText, params object[] args) {
-			this.warningMessage($"{this.fileName}(1,1): warning: {nodeName}: {ResourceParser.Format(errorText, args)}");
+			this.warningMessage($"{this.currentFile}(1,1): warning: {nodeName}: {ResourceParser.Format(errorText, args)}");
 			this.warningCount++;
 		}
 
@@ -175,9 +204,7 @@ namespace StrongTypeResource {
 			}
 			string type = list[0].Trim();
 			if(0 == this.errorCount) {
-				if(type == "System.String") {
-					file = ResourceParser.Format("content of the file: \"{0}\"", file);
-				}
+				file = ResourceParser.Format("content of the file: \"{0}\"", file);
 				return new ResourceItem(name, file, type);
 			}
 			return null;

@@ -63,7 +63,7 @@ namespace StrongTypeResourceUnitTests {
 		public void PerformanceTest() {
 			string rootFolder = Path.Combine(this.TestContext!.TestRunDirectory!, this.TestContext!.TestName!);
 			Directory.CreateDirectory(rootFolder);
-			TaskItem[] taskItems = this.GenerateResxFiles(rootFolder, "Strings", 1000)
+			TaskItem[] taskItems = this.GenerateResxFiles(rootFolder, "Strings", 10_000)
 				.Select(file => new TaskItem(file))
 				.ToArray()
 			;
