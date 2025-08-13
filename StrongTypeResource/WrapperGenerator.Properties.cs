@@ -39,19 +39,19 @@ namespace StrongTypeResource {
 			this.Items = items;
 		}
 
-		public void Generate(string code) {
+		public void Generate(string codePath) {
 			string content = this.TransformText();
 			string? oldFileContent = null;
-			if(File.Exists(code)) {
-				oldFileContent = File.ReadAllText(code, Encoding.UTF8);
+			if(File.Exists(codePath)) {
+				oldFileContent = File.ReadAllText(codePath, Encoding.UTF8);
 			}
 			if(!StringComparer.Ordinal.Equals(oldFileContent, content)) {
-				string? directory = Path.GetDirectoryName(code);
+				string? directory = Path.GetDirectoryName(codePath);
 				Debug.Assert(directory != null, "Directory name should not be null");
 				if(!Directory.Exists(directory)) {
 					Directory.CreateDirectory(directory!);
 				}
-				File.WriteAllText(code, content, Encoding.UTF8);
+				File.WriteAllText(codePath, content, Encoding.UTF8);
 			}
 		}
 	}

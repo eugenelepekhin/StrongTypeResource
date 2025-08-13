@@ -33,7 +33,7 @@ namespace StrongTypeResource {
 		/// </summary>
 		[Required]
 		[SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
-		public ITaskItem[]? ResxFiles { get; set; } = null;
+		public ITaskItem[]? ResxFiles { get; set; }
 
 		/// <summary>
 		/// The root directory for the generated C# code files relative to ProjectDirectory.
@@ -77,7 +77,7 @@ namespace StrongTypeResource {
 		/// </summary>
 		[Output]
 		[SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
-		public ITaskItem[]? ResourceWrapperFiles { get; set; } = null;
+		public ITaskItem[]? ResourceWrapperFiles { get; set; }
 
 		internal bool LogToConsole { get; set; }
 
@@ -157,7 +157,7 @@ namespace StrongTypeResource {
 			}
 		}
 
-		private List<ResourceGroup> BuildGroups() {
+		private List<ResourceGroup> BuildGroups(Action<string> errorMessage, Action<string> warningMessage) {
 			List<ResourceGroup> groups = new List<ResourceGroup>();
 			List<ITaskItem> others = new List<ITaskItem>();
 			// first collect all main resx files with defined generator and store all other resx files in other list
@@ -169,29 +169,40 @@ namespace StrongTypeResource {
 					bool isInternal = generatorIs("MSBuild:StrongTypeResourceInternal") || generatorIs("StrongTypeResource.internal");
 					if (isPublic || isInternal) {
 						string resourcePath = item.ItemSpec;
-						string resourceRoot = Path.GetDirectoryName(resourcePath) ?? string.Empty;
-						string resourceFile = Path.GetFileNameWithoutExtension(resourcePath);
-						string resourceName = !string.IsNullOrEmpty(resourceRoot)
-							? string.Format(CultureInfo.InvariantCulture, "{0}.{1}.{2}", this.RootNamespace, resourceRoot.Replace('\\', '.') , resourceFile)
-							: string.Format(CultureInfo.InvariantCulture, "{0}.{1}", this.RootNamespace, resourceFile)
-						;
-						string nameSpace = item.GetMetadata("CustomToolNamespace").Trim();
-						if(string.IsNullOrWhiteSpace(nameSpace)) {
-							nameSpace =  !string.IsNullOrEmpty(resourceRoot)
-								? string.Format(CultureInfo.InvariantCulture, "{0}.{1}", this.RootNamespace!, resourceRoot.Replace('\\', '.'))
-								: this.RootNamespace!
+						if(!groups.Any(g => string.Equals(g.ItemSpec, resourcePath, StringComparison.OrdinalIgnoreCase))) {
+							string resourceRoot = Path.GetDirectoryName(resourcePath) ?? string.Empty;
+							string resourceFile = Path.GetFileNameWithoutExtension(resourcePath);
+							if(Path.HasExtension(resourceFile)) {
+								warningMessage(
+									string.Format(
+										CultureInfo.InvariantCulture,
+										"StrongTypeResourceGenerator: The main resource file '{0}' has culture extension in its name. The main resource files should not have any culture extensions and be the assembly neutral culture.",
+										resourcePath
+									)
+								);
+							}
+							string resourceName = !string.IsNullOrEmpty(resourceRoot)
+								? string.Format(CultureInfo.InvariantCulture, "{0}.{1}.{2}", this.RootNamespace, resourceRoot.Replace('\\', '.') , resourceFile)
+								: string.Format(CultureInfo.InvariantCulture, "{0}.{1}", this.RootNamespace, resourceFile)
 							;
+							string nameSpace = item.GetMetadata("CustomToolNamespace").Trim();
+							if(string.IsNullOrWhiteSpace(nameSpace)) {
+								nameSpace =  !string.IsNullOrEmpty(resourceRoot)
+									? string.Format(CultureInfo.InvariantCulture, "{0}.{1}", this.RootNamespace!, resourceRoot.Replace('\\', '.'))
+									: this.RootNamespace!
+								;
+							}
+							ResourceGroup group = new ResourceGroup(
+								itemSpec: resourcePath,
+								resxPath: Path.Combine(this.ProjectDirectory,  resourcePath),
+								codePath: Path.Combine(this.CodeOutputPath, resourceRoot, resourceFile + ".resx.cs"),
+								name: resourceName,
+								nameSpace: nameSpace,
+								className: resourceFile.Replace('.', '_'),
+								isPublic: isPublic
+							);
+							groups.Add(group);
 						}
-						ResourceGroup group = new ResourceGroup(
-							itemSpec: resourcePath,
-							resxPath: Path.Combine(this.ProjectDirectory,  resourcePath),
-							codePath: Path.Combine(this.CodeOutputPath, resourceRoot, resourceFile + ".resx.cs"),
-							name: resourceName,
-							nameSpace: nameSpace,
-							className: resourceFile.Replace('.', '_'),
-							isPublic: isPublic
-						);
-						groups.Add(group);
 					} else {
 						others.Add(item);
 					}
@@ -211,27 +222,30 @@ namespace StrongTypeResource {
 		}
 
 		private bool Parse() {
-			List<ResourceGroup> groups = this.BuildGroups();
-			int errors = 0;
-			int warnings = 0;
+			int errorCount = 0;
+			int warningCount = 0;
+			void error(string message) { errorCount++; this.LogError(message); }
+			void warning(string message) { warningCount++; this.LogWarning(message); }
+
+			List<ResourceGroup> groups = this.BuildGroups(error, warning);
 			foreach(ResourceGroup group in groups) {
 				IEnumerable<ResourceItem> items = ResourceParser.Parse(
 					group.ResxPath,
 					!this.OptionalParameters,
 					group.Satellites,
-					message => { errors++; this.LogError(message); },
-					message => { warnings++; this.LogWarning(message);}
+					error,
+					warning
 				);
-				if(errors == 0) {
+				if(errorCount == 0) {
 					WrapperGenerator wrapper = new WrapperGenerator(group.Namespace, group.ClassName, group.Name, group.IsPublic, this.PseudoCulture, this.FlowDirection, this.NullableEnabled, items);
 					wrapper.Generate(Path.Combine(this.ProjectDirectory, group.CodePath));
 				}
 			}
-			if(errors == 0) {
+			if(errorCount == 0) {
 				this.ResourceWrapperFiles = groups.Select(g => new TaskItem(g.CodePath, true)).ToArray();
 			}
-			this.LogMessage($"StrongTypeResourceGenerator completed with {errors} errors and {warnings} warnings.");
-			return errors == 0;
+			this.LogMessage($"StrongTypeResourceGenerator completed with {errorCount} errors and {warningCount} warnings.");
+			return errorCount == 0;
 		}
 	}
 }

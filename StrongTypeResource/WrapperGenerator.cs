@@ -271,7 +271,7 @@ if(this.Pseudo) {
 		private sealed class PseudoResourceManager : ResourceManager {
 			private static Dictionary<char, char> map = new Dictionary<char, char> {
 				{ 'a', 'ä' },
-				{ 'b', 'ƃ' },
+				{ 'b', 'ƃ'' },
 				{ 'c', 'č' },
 				{ 'd', 'ƌ' },
 				{ 'e', 'ë' },
@@ -297,7 +297,7 @@ if(this.Pseudo) {
 				{ 'y', 'ŷ' },
 				{ 'z', 'ž' },
 				{ 'A', 'Ä' },
-				{ 'B', 'Ɓ' },
+				{ 'B', 'Ɓ'' },
 				{ 'C', 'Č' },
 				{ 'D', 'Đ' },
 				{ 'E', 'Ë' },

@@ -127,7 +127,7 @@
     <comment>icon</comment>
   </data>
   <data name="String1" xml:space="preserve">
-    <value>Hello, world!</value>
+    <value>Hello, world! Bb</value>
     <comment>my string</comment>
   </data>
   <data name="Audio" type="System.Resources.ResXFileRef, System.Windows.Forms">

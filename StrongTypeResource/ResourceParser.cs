@@ -121,7 +121,8 @@ namespace StrongTypeResource {
 									}
 									comment = reader.ReadElementContentAsString(); // move to the next node
 								} else {
-									this.Corrupted(name);
+									this.Warning(name, "Unexpected node: " + reader.Name);
+									reader.ReadElementContentAsString(); // just skip this node
 								}
 							} else {
 								reader.Skip(); // skip text nodes and other nodes
@@ -151,7 +152,6 @@ namespace StrongTypeResource {
 			itemList.ForEach(i => items.Add(i.Name, i));
 			void unknownResource(string name) => this.Warning(name, "resource does not exist in the main resource file \"{0}\"", this.currentFile);
 			foreach(string file in this.satellites) {
-				this.currentFile = file;
 				this.Parse(file,
 					(string name, string value, string comment) => {
 						if(items.TryGetValue(name, out ResourceItem? item)) {
