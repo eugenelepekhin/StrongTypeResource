@@ -58,6 +58,40 @@ namespace StrongTypeResourceUnitTests {
 			}
 		}
 
+		private StrongTypeResourceGenerator CreateGenerator(string resxPath) {
+			string resxFile = Path.Combine(this.TestContext!.DeploymentDirectory!, resxPath!);
+			Assert.IsTrue(File.Exists(resxFile), "Resx file does not exist: " + resxFile);
+			TaskItem main = new TaskItem(resxFile);
+			main.SetMetadata("Generator", "MSBuild:StrongTypeResourcePublic");
+			TaskItem[] taskItems = [main];
+
+			StrongTypeResourceGenerator generator = new() {
+				ProjectDirectory = this.TestContext!.DeploymentDirectory!,
+				ResxFiles = taskItems,
+				CodeOutputPath = this.TestContext!.TestRunDirectory!,
+				RootNamespace = "StrongTypeResourceUnitTests",
+				NullableEnabled = true,
+				PseudoCulture = false,
+				FlowDirection = false,
+				OptionalParameters = false,
+				LogToConsole = true
+			};
+
+			return generator;
+		}
+
+		public string InterceptConsoleError(Action action) {
+			TextWriter error = Console.Error;
+			StringWriter stringWriter = new StringWriter();
+			TextWriter textWriter = TextWriter.CreateBroadcasting(error, stringWriter);
+			try {
+				Console.SetError(textWriter);
+				action();
+			} finally {
+				Console.SetError(error);
+			}
+			return stringWriter.ToString();
+		}
 
 		[TestMethod]
 		public void PerformanceTest() {
@@ -117,11 +151,101 @@ namespace StrongTypeResourceUnitTests {
 		}
 
 		[TestMethod]
-		public void ParserTest() {
+		public void ParserDebugTest() {
 			string resxFile = Path.Combine(this.TestContext!.TestRunDirectory!, @"..\..\..\StrongTypeResourceTest\NewResx\Resources.resx");
 			Assert.IsTrue(File.Exists(resxFile), "Resx file does not exist: " + resxFile);
 			List<ResourceItem> list = ResourceParser.Parse(resxFile, true, Enumerable.Empty<string>(), s => this.TestContext!.WriteLine(s), s => this.TestContext!.WriteLine(s)).ToList();
 			Assert.AreEqual(7, list.Count, "Unexpected number of resources parsed from resx file.");
+		}
+
+		[TestMethod]
+		[DeploymentItem(@"Resources\BadRoot.resx")]
+		public void BadRootTest() {
+			string errors = this.InterceptConsoleError(() => {
+				StrongTypeResourceGenerator generator = this.CreateGenerator(@"BadRoot.resx");
+				bool result = generator.Execute();
+				Assert.IsFalse(result, "Generator should fail on bad root element in resx file.");
+			});
+			StringAssert.Contains(errors, "root: Root element is not <root>");
+		}
+
+		[TestMethod]
+		[DeploymentItem(@"Resources\NoName.resx")]
+		public void NoNameTest() {
+			string errors = this.InterceptConsoleError(() => {
+				StrongTypeResourceGenerator generator = this.CreateGenerator(@"NoName.resx");
+				bool result = generator.Execute();
+				Assert.IsFalse(result, "Generator should fail on bad root element in resx file.");
+			});
+			StringAssert.Contains(errors, "data: Resource name is missing");
+		}
+
+		[TestMethod]
+		[DeploymentItem(@"Resources\EmptyData.resx")]
+		public void EmptyDataTest() {
+			string errors = this.InterceptConsoleError(() => {
+				StrongTypeResourceGenerator generator = this.CreateGenerator(@"EmptyData.resx");
+				bool result = generator.Execute();
+				Assert.IsFalse(result, "Generator should fail on bad root element in resx file.");
+			});
+			StringAssert.Contains(errors, "StringText: Resource value is missing");
+		}
+
+		[TestMethod]
+		[DeploymentItem(@"Resources\ValueDuplicated.resx")]
+		public void ValueDuplicatedTest() {
+			string errors = this.InterceptConsoleError(() => {
+				StrongTypeResourceGenerator generator = this.CreateGenerator(@"ValueDuplicated.resx");
+				bool result = generator.Execute();
+				Assert.IsFalse(result, "Generator should fail on bad root element in resx file.");
+			});
+			StringAssert.Contains(errors, "StringDup: Resource value is duplicated: Hello, StringDup 1");
+		}
+
+		[TestMethod]
+		[DeploymentItem(@"Resources\CommentDuplicated.resx")]
+		public void CommentDuplicatedTest() {
+			string errors = this.InterceptConsoleError(() => {
+				StrongTypeResourceGenerator generator = this.CreateGenerator(@"CommentDuplicated.resx");
+				bool result = generator.Execute();
+				Assert.IsFalse(result, "Generator should fail on bad root element in resx file.");
+			});
+			StringAssert.Contains(errors, "CommentDup: Resource comment is duplicated: Comment 1");
+		}
+
+		[TestMethod]
+		[DeploymentItem(@"Resources\UnexpectedNode.resx")]
+		public void UnexpectedNodeTest() {
+			string errors = this.InterceptConsoleError(() => {
+				StrongTypeResourceGenerator generator = this.CreateGenerator(@"UnexpectedNode.resx");
+				bool result = generator.Execute();
+				Assert.IsTrue(result, "Generator should fail on bad root element in resx file.");
+			});
+
+			StringAssert.Contains(errors, "warning: UnexpectedNode: Unexpected node: hello");
+			StringAssert.Contains(errors, "warning: UnexpectedNode: Unexpected node: world");
+		}
+
+		[TestMethod]
+		[DeploymentItem(@"Resources\NameDuplicated.resx")]
+		public void NameDuplicatedTest() {
+			string errors = this.InterceptConsoleError(() => {
+				StrongTypeResourceGenerator generator = this.CreateGenerator(@"NameDuplicated.resx");
+				bool result = generator.Execute();
+				Assert.IsFalse(result, "Generator should fail on bad root element in resx file.");
+			});
+			StringAssert.Contains(errors, "NameDuplicated.resx is corrupted: 'name' is a duplicate attribute name");
+		}
+
+		[TestMethod]
+		[DeploymentItem(@"Resources\TypeDuplicated.resx")]
+		public void TypeDuplicated() {
+			string errors = this.InterceptConsoleError(() => {
+				StrongTypeResourceGenerator generator = this.CreateGenerator(@"TypeDuplicated.resx");
+				bool result = generator.Execute();
+				Assert.IsFalse(result, "Generator should fail on bad root element in resx file.");
+			});
+			StringAssert.Contains(errors, "TypeDuplicated.resx is corrupted: 'type' is a duplicate attribute name");
 		}
 	}
 }

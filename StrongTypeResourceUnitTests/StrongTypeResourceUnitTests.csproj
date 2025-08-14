@@ -10,6 +10,53 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <EmbeddedResource Remove="Resources\BadRoot.resx" />
+    <EmbeddedResource Remove="Resources\CommentDuplicated.resx" />
+    <EmbeddedResource Remove="Resources\EmptyData.resx" />
+    <EmbeddedResource Remove="Resources\NameDuplicated.resx" />
+    <EmbeddedResource Remove="Resources\NoName.resx" />
+    <EmbeddedResource Remove="Resources\TypeDuplicated.resx" />
+    <EmbeddedResource Remove="Resources\UnexpectedNode.resx" />
+    <EmbeddedResource Remove="Resources\ValueDuplicated.resx" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Resources\BadRoot.resx">
+      <Generator></Generator>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Resources\CommentDuplicated.resx">
+      <Generator></Generator>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Resources\TypeDuplicated.resx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
+      <Generator></Generator>
+    </None>
+    <None Include="Resources\NameDuplicated.resx">
+      <Generator></Generator>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Resources\EmptyData.resx">
+      <Generator></Generator>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Resources\NoName.resx">
+      <Generator></Generator>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Resources\UnexpectedNode.resx">
+      <Generator></Generator>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Resources\ValueDuplicated.resx">
+      <Generator></Generator>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\StrongTypeResourceTest\StrongTypeResourceTest.csproj" />
     <ProjectReference Include="..\StrongTypeResource\StrongTypeResource.csproj" />
   </ItemGroup>

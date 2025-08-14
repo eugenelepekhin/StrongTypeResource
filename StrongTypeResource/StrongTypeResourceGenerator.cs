@@ -7,6 +7,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Xml;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
 
@@ -110,6 +111,7 @@ namespace StrongTypeResource {
 			public bool IsMainResource(string path) => StringComparer.OrdinalIgnoreCase.Equals(this.ResxPath, path);
 		}
 
+		[SuppressMessage("Design", "CA1031:Do not catch general exception types")]
 		public override bool Execute() {
 			this.LogMessage("StrongTypeResourceGenerator started");
 			if(string.IsNullOrWhiteSpace(this.ProjectDirectory)) {
@@ -128,7 +130,16 @@ namespace StrongTypeResource {
 				this.CodeOutputPath = this.CodeOutputPath!.Trim();
 				this.RootNamespace = this.RootNamespace!.Trim();
 
-				return this.Parse();
+				try {
+					return this.Parse();
+				} catch(XmlException xmlException) {
+					this.LogError($"StrongTypeResourceGenerator: .resx file {xmlException.SourceUri} is corrupted: {xmlException.Message}");
+				} catch(IOException ioException) {
+					this.LogError($"StrongTypeResourceGenerator: IO error occurred while processing .resx files: {ioException.Message}");
+				} catch(Exception exception) {
+					this.LogError($"StrongTypeResourceGenerator: Unexpected error occurred: {exception.Message}");
+				}
+				return false;
 			}
 			return true;
 		}
@@ -143,7 +154,7 @@ namespace StrongTypeResource {
 
 		private void LogWarning(string message) {
 			if (this.LogToConsole) {
-				Console.WriteLine(message);
+				Console.Error.WriteLine(message);
 			} else {
 				this.Log.LogWarning(message);
 			}
@@ -218,7 +229,7 @@ namespace StrongTypeResource {
 			// now group all satellite resx files with main resx files. Note that usually it's going to be just one group.
 			foreach(ResourceGroup group in groups) {
 				string groupPath = Path.ChangeExtension(Path.ChangeExtension(group.ItemSpec, null), null); // remove .resx extension and if culture extension exists remove it too.
-				Regex regex = new Regex(Regex.Escape(groupPath) + @"\.[a-zA-Z\-]{2,20}\.resx", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+				Regex regex = new Regex(Regex.Escape(groupPath) + @"\.[a-zA-Z\-01]{2,20}\.resx", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 				foreach(ITaskItem satellite in others) {
 					string path = satellite.ItemSpec;
 					if(regex.IsMatch(path) && !group.IsMainResource(path)) {

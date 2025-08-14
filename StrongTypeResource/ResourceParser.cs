@@ -86,14 +86,8 @@ namespace StrongTypeResource {
 					string? type = null;
 					while(reader.MoveToNextAttribute()) {
 						if(reader.Name == "name") {
-							if(name != null) {
-								this.Error("data", "Resource name is duplicated: " + name);
-							}
 							name = reader.Value.Trim();
 						} else if(reader.Name == "type") {
-							if(type != null) {
-								this.Error("data", "Resource type is duplicated: " + type);
-							}
 							type = reader.Value.Trim();
 						}
 					}
