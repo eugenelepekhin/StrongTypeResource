@@ -127,7 +127,7 @@
     <comment>icon</comment>
   </data>
   <data name="String1" xml:space="preserve">
-    <value>Hello, world! Bb</value>
+    <value>THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG the quick brown fox jumps over the lazy dog Bb</value>
     <comment>my string</comment>
   </data>
   <data name="Audio" type="System.Resources.ResXFileRef, System.Windows.Forms">

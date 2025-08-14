@@ -90,7 +90,7 @@ namespace StrongTypeResource {
 			public string ClassName { get; }
 			public bool IsPublic { get; }
 
-			private HashSet<string> satellites = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+			private List<string> satellites = new List<string>();
 			public IEnumerable<string> Satellites => this.satellites;
 
 			public ResourceGroup(string itemSpec, string resxPath, string codePath, string name, string nameSpace, string className, bool isPublic) {
@@ -158,59 +158,67 @@ namespace StrongTypeResource {
 		}
 
 		private List<ResourceGroup> BuildGroups(Action<string> errorMessage, Action<string> warningMessage) {
-			List<ResourceGroup> groups = new List<ResourceGroup>();
-			List<ITaskItem> others = new List<ITaskItem>();
-			// first collect all main resx files with defined generator and store all other resx files in other list
+			// Remove all duplicate resx files by their ItemSpec (path)
+			Dictionary<string, ITaskItem> uniqueResxFiles = new Dictionary<string, ITaskItem>(StringComparer.OrdinalIgnoreCase);
 			foreach(ITaskItem item in this.ResxFiles!) {
 				if(Path.GetExtension(item.ItemSpec).Equals(".resx", StringComparison.OrdinalIgnoreCase)) {
-					string generator = item.GetMetadata("Generator");
-					bool generatorIs(string value) => string.Equals(generator, value, StringComparison.OrdinalIgnoreCase);
-					bool isPublic = generatorIs("MSBuild:StrongTypeResourcePublic") || generatorIs("StrongTypeResource.public");
-					bool isInternal = generatorIs("MSBuild:StrongTypeResourceInternal") || generatorIs("StrongTypeResource.internal");
-					if (isPublic || isInternal) {
-						string resourcePath = item.ItemSpec;
-						if(!groups.Any(g => string.Equals(g.ItemSpec, resourcePath, StringComparison.OrdinalIgnoreCase))) {
-							string resourceRoot = Path.GetDirectoryName(resourcePath) ?? string.Empty;
-							string resourceFile = Path.GetFileNameWithoutExtension(resourcePath);
-							if(Path.HasExtension(resourceFile)) {
-								warningMessage(
-									string.Format(
-										CultureInfo.InvariantCulture,
-										"StrongTypeResourceGenerator: The main resource file '{0}' has culture extension in its name. The main resource files should not have any culture extensions and be the assembly neutral culture.",
-										resourcePath
-									)
-								);
-							}
-							string resourceName = !string.IsNullOrEmpty(resourceRoot)
-								? string.Format(CultureInfo.InvariantCulture, "{0}.{1}.{2}", this.RootNamespace, resourceRoot.Replace('\\', '.') , resourceFile)
-								: string.Format(CultureInfo.InvariantCulture, "{0}.{1}", this.RootNamespace, resourceFile)
-							;
-							string nameSpace = item.GetMetadata("CustomToolNamespace").Trim();
-							if(string.IsNullOrWhiteSpace(nameSpace)) {
-								nameSpace =  !string.IsNullOrEmpty(resourceRoot)
-									? string.Format(CultureInfo.InvariantCulture, "{0}.{1}", this.RootNamespace!, resourceRoot.Replace('\\', '.'))
-									: this.RootNamespace!
-								;
-							}
-							ResourceGroup group = new ResourceGroup(
-								itemSpec: resourcePath,
-								resxPath: Path.Combine(this.ProjectDirectory,  resourcePath),
-								codePath: Path.Combine(this.CodeOutputPath, resourceRoot, resourceFile + ".resx.cs"),
-								name: resourceName,
-								nameSpace: nameSpace,
-								className: resourceFile.Replace('.', '_'),
-								isPublic: isPublic
-							);
-							groups.Add(group);
-						}
-					} else {
-						others.Add(item);
+					string key = item.ItemSpec.Trim();
+					if(!uniqueResxFiles.ContainsKey(key)) {
+						uniqueResxFiles[key] = item;
 					}
 				}
 			}
-			// now group all satellite resx files with main resx files
+
+			List<ResourceGroup> groups = new List<ResourceGroup>();
+			List<ITaskItem> others = new List<ITaskItem>();
+			// collect all main resx files with defined generator and store all other resx files in other list
+			foreach(ITaskItem item in uniqueResxFiles.Values) {
+				string generator = item.GetMetadata("Generator");
+				bool generatorIs(string value) => string.Equals(generator, value, StringComparison.OrdinalIgnoreCase);
+				bool isPublic = generatorIs("MSBuild:StrongTypeResourcePublic") || generatorIs("StrongTypeResource.public");
+				bool isInternal = generatorIs("MSBuild:StrongTypeResourceInternal") || generatorIs("StrongTypeResource.internal");
+				if (isPublic || isInternal) {
+					string resourcePath = item.ItemSpec;
+					string resourceRoot = Path.GetDirectoryName(resourcePath) ?? string.Empty;
+					string resourceFile = Path.GetFileNameWithoutExtension(resourcePath);
+					if(Path.HasExtension(resourceFile)) {
+						warningMessage(
+							string.Format(
+								CultureInfo.InvariantCulture,
+								"StrongTypeResourceGenerator: The main resource file '{0}' has culture extension in its name. The main resource files should not have any culture extensions and be the assembly neutral culture.",
+								resourcePath
+							)
+						);
+					}
+					string resourceName = !string.IsNullOrEmpty(resourceRoot)
+						? string.Format(CultureInfo.InvariantCulture, "{0}.{1}.{2}", this.RootNamespace, resourceRoot.Replace('\\', '.') , resourceFile)
+						: string.Format(CultureInfo.InvariantCulture, "{0}.{1}", this.RootNamespace, resourceFile)
+					;
+					string nameSpace = item.GetMetadata("CustomToolNamespace").Trim();
+					if(string.IsNullOrWhiteSpace(nameSpace)) {
+						nameSpace =  !string.IsNullOrEmpty(resourceRoot)
+							? string.Format(CultureInfo.InvariantCulture, "{0}.{1}", this.RootNamespace!, resourceRoot.Replace('\\', '.'))
+							: this.RootNamespace!
+						;
+					}
+					ResourceGroup group = new ResourceGroup(
+						itemSpec: resourcePath,
+						resxPath: Path.Combine(this.ProjectDirectory,  resourcePath),
+						codePath: Path.Combine(this.CodeOutputPath, resourceRoot, resourceFile + ".resx.cs"),
+						name: resourceName,
+						nameSpace: nameSpace,
+						className: resourceFile.Replace('.', '_'),
+						isPublic: isPublic
+					);
+					groups.Add(group);
+				} else {
+					others.Add(item);
+				}
+			}
+			// now group all satellite resx files with main resx files. Note that usually it's going to be just one group.
 			foreach(ResourceGroup group in groups) {
-				Regex regex = new Regex(Regex.Escape(Path.ChangeExtension(group.ItemSpec, null)) + @"\.[a-zA-Z\-]{2,20}\.resx", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+				string groupPath = Path.ChangeExtension(Path.ChangeExtension(group.ItemSpec, null), null); // remove .resx extension and if culture extension exists remove it too.
+				Regex regex = new Regex(Regex.Escape(groupPath) + @"\.[a-zA-Z\-]{2,20}\.resx", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 				foreach(ITaskItem satellite in others) {
 					string path = satellite.ItemSpec;
 					if(regex.IsMatch(path) && !group.IsMainResource(path)) {

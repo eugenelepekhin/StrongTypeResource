@@ -33,9 +33,9 @@ namespace <#=this.NameSpace#> {
 	// or rebuild your VS project.
 	[DebuggerNonUserCode]
 	[CompilerGenerated]
-	<#if(this.IsPublic) {#>
+<#if(this.IsPublic) {#>
 	[SuppressMessage("Maintainability", "CA1515:Consider making public types internal")]
-	<#}#>
+<#}#>
 	[SuppressMessage("Naming", "CA1724:Type names should not match namespaces")]
 	<#=this.IsPublic ? "public" : "internal"#> static class <#=this.ClassName#> {
 

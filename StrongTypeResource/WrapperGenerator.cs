@@ -88,7 +88,7 @@ if(this.FlowDirection) {
 	// or rebuild your VS project.
 	[DebuggerNonUserCode]
 	[CompilerGenerated]
-	");
+");
             
             #line 36 "C:\Projects\StrongTypeResource\StrongTypeResource\WrapperGenerator.tt"
 if(this.IsPublic) {
@@ -96,7 +96,7 @@ if(this.IsPublic) {
             #line default
             #line hidden
             this.Write("\t[SuppressMessage(\"Maintainability\", \"CA1515:Consider making public types interna" +
-                    "l\")]\r\n\t");
+                    "l\")]\r\n");
             
             #line 38 "C:\Projects\StrongTypeResource\StrongTypeResource\WrapperGenerator.tt"
 }
