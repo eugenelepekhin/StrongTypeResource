@@ -247,5 +247,49 @@ namespace StrongTypeResourceUnitTests {
 			});
 			StringAssert.Contains(errors, "TypeDuplicated.resx is corrupted: 'type' is a duplicate attribute name");
 		}
+
+		[TestMethod]
+		[DeploymentItem(@"Resources\Texts.resx", "Resources")]
+		public void GeneratesCodeLocationTest() {
+			string projectDirectory = this.TestContext!.DeploymentDirectory!;
+			string resxFile = @"Resources\Texts.resx";
+			Assert.IsTrue(File.Exists(Path.Combine(projectDirectory, resxFile)), "Resx file does not exist: " + resxFile);
+			TaskItem main = new TaskItem(resxFile);
+			main.SetMetadata("Generator", "MSBuild:StrongTypeResourcePublic");
+			TaskItem[] taskItems = [main];
+
+			StrongTypeResourceGenerator generator = new() {
+				ProjectDirectory = projectDirectory,
+				ResxFiles = taskItems,
+				CodeOutputPath = this.TestContext!.TestRunDirectory!,
+				RootNamespace = "StrongTypeResourceUnitTests",
+				NullableEnabled = true,
+				PseudoCulture = false,
+				FlowDirection = false,
+				OptionalParameters = false,
+				LogToConsole = true
+			};
+
+			bool result = generator.Execute();
+			Assert.IsTrue(result, "Generator execution failed");
+			string codePath = Path.Combine(this.TestContext!.TestRunDirectory!, resxFile + ".cs");
+			Assert.IsTrue(File.Exists(codePath), "Generated code file does not exist.");
+			string code = File.ReadAllText(codePath);
+			StringAssert.Contains(code, "get { return ResourceManager.GetString(\"String1\", Culture)!; }", "Generated code does not contain expected class declaration");
+		}
+
+		[TestMethod]
+		[DeploymentItem(@"Resources\SpacePreserve.resx")]
+		public void SpacePreserveTest() {
+			StrongTypeResourceGenerator generator = this.CreateGenerator(@"SpacePreserve.resx");
+			bool result = generator.Execute();
+			Assert.IsTrue(result, "Generator execution failed");
+			string codePath = Path.Combine(this.TestContext!.DeploymentDirectory!, "SpacePreserve.resx.cs");
+			Assert.IsTrue(File.Exists(codePath), "Generated code file does not exist.");
+			string code = File.ReadAllText(codePath);
+			StringAssert.Contains(code, "get { return ResourceManager.GetString(\"String1\", Culture)!; }", "Generated code does not contain expected class declaration");
+			StringAssert.Contains(code, "get { return ResourceManager.GetString(\"String2\", Culture)!; }", "Generated code does not contain expected class declaration");
+			StringAssert.Contains(code, "get { return ResourceManager.GetString(\"String3\", Culture)!; }", "Generated code does not contain expected class declaration");
+		}
 	}
 }

@@ -331,7 +331,7 @@ namespace StrongTypeResourceUnitTests {
 
 		[TestMethod]
 		public void VariantsError1Test() {
-			this.AssertError("a", "b", "!(c, d, e)", "Localization variants does not contain provided value: b");
+			this.AssertError("a", "b", "!(c, d, e)", "The provided value 'b' is not one of the allowed translation options");
 		}
 
 		[TestMethod]

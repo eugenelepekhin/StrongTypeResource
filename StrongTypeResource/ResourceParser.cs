@@ -18,7 +18,7 @@ namespace StrongTypeResource {
 		private static readonly char[] splitter = { ',' };
 
 		public static IEnumerable<ResourceItem> Parse(string file, bool enforceParameterDeclaration, IEnumerable<string> satellites, Action<string> errorMessage, Action<string> warningMessage) {
-			ResourceParser parser = new ResourceParser(file, enforceParameterDeclaration, satellites, errorMessage, warningMessage);
+			ResourceParser parser = new ResourceParser(enforceParameterDeclaration, satellites, errorMessage, warningMessage);
 
 			List<ResourceItem> list = new List<ResourceItem>();
 			void assign(ResourceItem? item) { if(item != null) { list.Add(item); } }
@@ -27,7 +27,7 @@ namespace StrongTypeResource {
 				(string name, string value, string comment) => assign(parser.GenerateString(name, value, comment))
 			);
 			if(parser.errorCount == 0 && parser.satellites.Any()) {
-				parser.VerifySatellites(list);
+				parser.VerifySatellites(file, list);
 			}
 			if(parser.errorCount == 0) {
 				return list;
@@ -35,7 +35,6 @@ namespace StrongTypeResource {
 			return Enumerable.Empty<ResourceItem>();
 		}
 
-		private readonly string mainFile;
 		private string currentFile;
 		private readonly bool enforceParameterDeclaration;
 		private readonly IEnumerable<string> satellites;
@@ -52,9 +51,8 @@ namespace StrongTypeResource {
 		private readonly Action<string> errorMessage;
 		private readonly Action<string> warningMessage;
 
-		private ResourceParser(string mainFile, bool enforceParameterDeclaration, IEnumerable<string> satellites, Action<string> errorMessage, Action<string> warningMessage) {
+		private ResourceParser(bool enforceParameterDeclaration, IEnumerable<string> satellites, Action<string> errorMessage, Action<string> warningMessage) {
 			this.currentFile = string.Empty; // will be set in Parse
-			this.mainFile = mainFile;
 			this.enforceParameterDeclaration = enforceParameterDeclaration;
 			this.satellites = satellites;
 			this.errorCount = 0;
@@ -141,10 +139,10 @@ namespace StrongTypeResource {
 			}
 		}
 
-		private void VerifySatellites(List<ResourceItem> itemList) {
+		private void VerifySatellites(string mainFile, List<ResourceItem> itemList) {
 			Dictionary<string, ResourceItem> items = new Dictionary<string, ResourceItem>(itemList.Count);
 			itemList.ForEach(i => items.Add(i.Name, i));
-			void unknownResource(string name) => this.Warning(name, "resource does not exist in the main resource file \"{0}\"", this.currentFile);
+			void unknownResource(string name) => this.Warning(name, "resource provided in language resource file \"{0}\" does not exist in the main resource file \"{1}\"", this.currentFile, mainFile);
 			foreach(string file in this.satellites) {
 				this.Parse(file,
 					(string name, string value, string comment) => {
@@ -152,7 +150,7 @@ namespace StrongTypeResource {
 							ResourceItem? satellite = this.GenerateInclude(name, value, comment);
 							// satellite == null on errors. So, do not generate yet another one.
 							if(satellite != null && item.Type != satellite.Type) {
-								this.Error(name, "type of file resource is different in main resource file \"{0}\" and language resource file \"{1}\"", this.mainFile, file);
+								this.Error(name, "types of resources are different in main resource file \"{0}\" and language resource file \"{1}\"", mainFile, file);
 							}
 						} else {
 							unknownResource(name);
@@ -163,10 +161,10 @@ namespace StrongTypeResource {
 							if(!item.SuppressValidation) {
 								int count = this.ValidateFormatItems(name, value, false);
 								if(count != (item.Parameters == null ? 0 : item.Parameters.Count)) {
-									this.Warning(name, "number of parameters is different from the same resource in the main resource file \"{0}\"", this.currentFile);
+									this.Warning(name, "numbers of format parameters are different in the main resource file \"{0}\" and language resource file \"{1}\"", mainFile, this.currentFile);
 								} else if(item.LocalizationVariants != null) {
 									if(!item.LocalizationVariants.Contains(value)) {
-										this.Error(name, "provided value is not in variant list defined in main resource file: \"{0}\"", this.currentFile);
+										this.Error(name, "provided value '{0}' in language resource file \"{1}\" doesn't match any of the allowed options defined in main resource file: \"{2}\"", value, this.currentFile, mainFile);
 									}
 								}
 							}
@@ -246,7 +244,7 @@ namespace StrongTypeResource {
 				}
 				item.LocalizationVariants = list;
 				if(!list.Contains(item.Value)) {
-					this.Error(item.Name, "Localization variants does not contain provided value: {0}", item.Value);
+					this.Error(item.Name, "The provided value '{0}' is not one of the allowed translation options.", item.Value);
 				}
 			}
 			return match.Success;

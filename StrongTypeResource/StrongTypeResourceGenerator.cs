@@ -18,7 +18,7 @@ namespace StrongTypeResource {
 	/// <remarks>This task processes .resx files specified in the <see cref="ResxFiles"/> property and generates C#
 	/// code files containing strongly-typed resource wrappers. The generated files are placed in the directory specified
 	/// by <see cref="CodeOutputPath"/>. The task supports customization of namespaces and class visibility based
-	/// on metadata in the .resx files.</remarks>
+	/// on metadata in the .resx and project files.</remarks>
 	public class StrongTypeResourceGenerator : Task {
 		/// <summary>
 		/// Input parameter: the root directory of the project containing the .resx files.
@@ -80,6 +80,9 @@ namespace StrongTypeResource {
 		[SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
 		public ITaskItem[]? ResourceWrapperFiles { get; set; }
 
+		/// <summary>
+		/// This is used in unit tests to log messages to console instead of MSBuild log.
+		/// </summary>
 		internal bool LogToConsole { get; set; }
 
 		private sealed class ResourceGroup {
@@ -126,12 +129,12 @@ namespace StrongTypeResource {
 				this.LogError("StrongTypeResourceGenerator: RootNamespace is not set.");
 				return false;
 			}
-			if (this.ResxFiles != null && 0 < this.ResxFiles.Length) {
+			if(this.ResxFiles != null && 0 < this.ResxFiles.Length) {
 				this.CodeOutputPath = this.CodeOutputPath!.Trim();
 				this.RootNamespace = this.RootNamespace!.Trim();
 
 				try {
-					return this.Parse();
+					return this.Generate();
 				} catch(XmlException xmlException) {
 					this.LogError($"StrongTypeResourceGenerator: .resx file {xmlException.SourceUri} is corrupted: {xmlException.Message}");
 				} catch(IOException ioException) {
@@ -182,13 +185,13 @@ namespace StrongTypeResource {
 
 			List<ResourceGroup> groups = new List<ResourceGroup>();
 			List<ITaskItem> others = new List<ITaskItem>();
-			// collect all main resx files with defined generator and store all other resx files in other list
+			// collect all main resx files with defined generator and store all other resx files in others list
 			foreach(ITaskItem item in uniqueResxFiles.Values) {
 				string generator = item.GetMetadata("Generator");
 				bool generatorIs(string value) => string.Equals(generator, value, StringComparison.OrdinalIgnoreCase);
 				bool isPublic = generatorIs("MSBuild:StrongTypeResourcePublic") || generatorIs("StrongTypeResource.public");
 				bool isInternal = generatorIs("MSBuild:StrongTypeResourceInternal") || generatorIs("StrongTypeResource.internal");
-				if (isPublic || isInternal) {
+				if(isPublic || isInternal) {
 					string resourcePath = item.ItemSpec;
 					string resourceRoot = Path.GetDirectoryName(resourcePath) ?? string.Empty;
 					string resourceFile = Path.GetFileNameWithoutExtension(resourcePath);
@@ -215,7 +218,7 @@ namespace StrongTypeResource {
 					ResourceGroup group = new ResourceGroup(
 						itemSpec: resourcePath,
 						resxPath: Path.Combine(this.ProjectDirectory,  resourcePath),
-						codePath: Path.Combine(this.CodeOutputPath, resourceRoot, resourceFile + ".resx.cs"),
+						codePath: Path.Combine(this.CodeOutputPath, resourcePath + ".cs"),
 						name: resourceName,
 						nameSpace: nameSpace,
 						className: resourceFile.Replace('.', '_'),
@@ -240,7 +243,7 @@ namespace StrongTypeResource {
 			return groups;
 		}
 
-		private bool Parse() {
+		private bool Generate() {
 			int errorCount = 0;
 			int warningCount = 0;
 			void error(string message) { errorCount++; this.LogError(message); }
