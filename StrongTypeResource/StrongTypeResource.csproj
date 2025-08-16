@@ -25,7 +25,7 @@
 		<BuildOutputTargetFolder>tasks</BuildOutputTargetFolder>
 		<NoWarn>$(NoWarn);NU5100;NU5128</NoWarn>
 
-		<PackageReleaseNotes>Allow update of resource wrapper code after saving .resx file. Better tool performance.</PackageReleaseNotes>
+		<PackageReleaseNotes>Better error messages.</PackageReleaseNotes>
 		
 	</PropertyGroup>
 

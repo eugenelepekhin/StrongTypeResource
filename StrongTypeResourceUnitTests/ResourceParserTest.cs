@@ -199,12 +199,12 @@ namespace StrongTypeResourceUnitTests {
 
 		[TestMethod]
 		public void WrongNumberOfParameters1Test() {
-			this.AssertError("a", "{2}{0}{1}", "{int i, int j}", "number of parameters expected by value of the string do not match to provided parameter list in comment");
+			this.AssertError("a", "{2}{0}{1}", "{int i, int j}", "the number of format placeholders in the string doesn't match count of parameters listed in the comment");
 		}
 
 		[TestMethod]
 		public void WrongNumberOfParameters2Test() {
-			this.AssertError("a", "{2}{0}{1}", "{int i, int j, int k, int l}", "number of parameters expected by value of the string do not match to provided parameter list in comment");
+			this.AssertError("a", "{2}{0}{1}", "{int i, int j, int k, int l}", "the number of format placeholders in the string doesn't match count of parameters listed in the comment");
 		}
 
 		[TestMethod]
@@ -331,7 +331,7 @@ namespace StrongTypeResourceUnitTests {
 
 		[TestMethod]
 		public void VariantsError1Test() {
-			this.AssertError("a", "b", "!(c, d, e)", "The provided value 'b' is not one of the allowed translation options");
+			this.AssertError("a", "b", "!(c, d, e)", @"provided value 'b' is not in the list of allowed options: \(c, d, e\)");
 		}
 
 		[TestMethod]

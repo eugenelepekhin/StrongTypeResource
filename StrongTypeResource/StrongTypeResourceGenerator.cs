@@ -130,6 +130,7 @@ namespace StrongTypeResource {
 				return false;
 			}
 			if(this.ResxFiles != null && 0 < this.ResxFiles.Length) {
+				this.ProjectDirectory = this.ProjectDirectory!.Trim();
 				this.CodeOutputPath = this.CodeOutputPath!.Trim();
 				this.RootNamespace = this.RootNamespace!.Trim();
 
