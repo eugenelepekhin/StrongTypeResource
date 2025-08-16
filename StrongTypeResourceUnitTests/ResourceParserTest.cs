@@ -54,7 +54,7 @@ namespace StrongTypeResourceUnitTests {
 			return args;
 		}
 
-		private void ThrowOnErrorMessage(string message) {
+		private void ThrowOnErrorMessage(string? file, string message) {
 			this.TestContext.WriteLine($"Unexpected error message: {message}");
 			throw new InvalidOperationException(message);
 		}
@@ -153,7 +153,7 @@ namespace StrongTypeResourceUnitTests {
 				R("a", expected, null)
 			));
 			string? warning = null;
-			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, false, [], this.ThrowOnErrorMessage, message => warning = message);
+			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, false, [], this.ThrowOnErrorMessage, (f, message) => warning = message);
 			this.ExpectErrorMessage("parameters declaration is missing in the comment", warning!);
 			Assert.AreEqual(1, actual.Count());
 			ResourceItem item = actual.First();
@@ -176,7 +176,7 @@ namespace StrongTypeResourceUnitTests {
 				this.TestContext.WriteLine($"Error: {message}");
 				errors.Add(message);
 			}
-			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], message => addError(message), this.ThrowOnErrorMessage);
+			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], (f, message) => addError(message), this.ThrowOnErrorMessage);
 			Assert.IsTrue(0 < errors.Count);
 			this.ExpectErrorMessage(expectedError, errors[0]);
 			Assert.IsFalse(actual.Any());
@@ -229,7 +229,7 @@ namespace StrongTypeResourceUnitTests {
 			));
 			int errors = 0;
 			int warnings = 0;
-			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], _ => errors++, _ => warnings++);
+			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], (f, s) => errors++, (f, s) => warnings++);
 			Assert.AreEqual(6, actual.Count());
 			Assert.AreEqual(0, errors);
 			Assert.AreEqual(0, warnings);
@@ -242,7 +242,7 @@ namespace StrongTypeResourceUnitTests {
 			));
 			int errors = 0;
 			int warnings = 0;
-			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], _ => errors++, _ => warnings++);
+			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], (f, s) => errors++, (f, s) => warnings++);
 			Assert.AreEqual(1, actual.Count());
 			Assert.AreEqual(0, errors);
 			Assert.AreEqual(0, warnings);
@@ -257,7 +257,7 @@ namespace StrongTypeResourceUnitTests {
 			));
 			int errors = 0;
 			int warnings = 0;
-			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], _ => errors++, _ => warnings++);
+			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], (f, s) => errors++, (f, s) => warnings++);
 			Assert.AreEqual(1, actual.Count());
 			Assert.AreEqual(0, errors);
 			Assert.AreEqual(0, warnings);
@@ -272,7 +272,7 @@ namespace StrongTypeResourceUnitTests {
 			));
 			int errors = 0;
 			int warnings = 0;
-			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], _ => errors++, _ => warnings++);
+			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], (f, s) => errors++, (f, s) => warnings++);
 			Assert.AreEqual(1, actual.Count());
 			Assert.AreEqual(0, errors);
 			Assert.AreEqual(0, warnings);
@@ -288,7 +288,7 @@ namespace StrongTypeResourceUnitTests {
 			));
 			int errors = 0;
 			int warnings = 0;
-			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], _ => errors++, _ => warnings++);
+			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], (f, s) => errors++, (f, s) => warnings++);
 			Assert.AreEqual(1, actual.Count());
 			Assert.AreEqual(0, errors);
 			Assert.AreEqual(0, warnings);
@@ -304,7 +304,7 @@ namespace StrongTypeResourceUnitTests {
 			));
 			int errors = 0;
 			int warnings = 0;
-			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], _ => errors++, _ => warnings++);
+			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], (f, s) => errors++, (f, s) => warnings++);
 			Assert.AreEqual(1, actual.Count());
 			Assert.AreEqual(0, errors);
 			Assert.AreEqual(0, warnings);
@@ -320,7 +320,7 @@ namespace StrongTypeResourceUnitTests {
 			));
 			int errors = 0;
 			int warnings = 0;
-			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], _ => errors++, _ => warnings++);
+			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], (f, s) => errors++, (f, s) => warnings++);
 			Assert.AreEqual(1, actual.Count());
 			Assert.AreEqual(0, errors);
 			Assert.AreEqual(0, warnings);
@@ -341,7 +341,7 @@ namespace StrongTypeResourceUnitTests {
 			));
 			int errors = 0;
 			int warnings = 0;
-			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], _ => errors++, _ => warnings++);
+			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], (f, s) => errors++, (f, s) => warnings++);
 			Assert.AreEqual(1, actual.Count());
 			Assert.AreEqual(0, errors);
 			Assert.AreEqual(0, warnings);
@@ -357,7 +357,7 @@ namespace StrongTypeResourceUnitTests {
 				string path = this.WriteFile(R(R("a" + ++count, value, comment)));
 				int errors = 0;
 				int warnings = 0;
-				IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], _ => errors++, _ => warnings++);
+				IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], (f, s) => errors++, (f, s) => warnings++);
 				Assert.AreEqual(1, actual.Count());
 				Assert.AreEqual(0, errors);
 				Assert.AreEqual(0, warnings);
@@ -412,7 +412,7 @@ namespace StrongTypeResourceUnitTests {
 			void valid(string path, int parameterCount) {
 				int errors = 0;
 				int warnings = 0;
-				IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], _ => errors++, _ => warnings++);
+				IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], (f, s) => errors++, (f, s) => warnings++);
 				Assert.AreEqual(1, actual.Count());
 				Assert.AreEqual(0, errors);
 				Assert.AreEqual(0, warnings);
@@ -423,7 +423,7 @@ namespace StrongTypeResourceUnitTests {
 			void error(string path) {
 				int errors = 0;
 				int warnings = 0;
-				IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], _ => errors++, _ => warnings++);
+				IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], (f, s) => errors++, (f, s) => warnings++);
 				Assert.IsTrue(0 < errors);
 				Assert.IsFalse(actual.Any());
 			};
@@ -461,7 +461,7 @@ namespace StrongTypeResourceUnitTests {
 				string path = this.WriteFile(R(R(name, value, null)));
 				int errors = 0;
 				int warnings = 0;
-				IEnumerable<ResourceItem> actual = ResourceParser.Parse(main, true, [path], _ => errors++, _ => warnings++);
+				IEnumerable<ResourceItem> actual = ResourceParser.Parse(main, true, [path], (f, s) => errors++, (f, s) => warnings++);
 				Assert.AreEqual(count, actual.Count());
 				Assert.AreEqual(0, errors);
 				Assert.AreEqual(0, warnings);
@@ -470,7 +470,7 @@ namespace StrongTypeResourceUnitTests {
 				string path = this.WriteFile(R(R(name, value, null)));
 				int errors = 0;
 				int warnings = 0;
-				IEnumerable<ResourceItem> actual = ResourceParser.Parse(main, true, [path], _ => errors++, _ => warnings++);
+				IEnumerable<ResourceItem> actual = ResourceParser.Parse(main, true, [path], (f, s) => errors++, (f, s) => warnings++);
 				Assert.AreEqual(count, actual.Count());
 				Assert.AreEqual(0, errors);
 				Assert.IsTrue(0 < warnings);
@@ -479,9 +479,8 @@ namespace StrongTypeResourceUnitTests {
 				string path = this.WriteFile(R(R(name, value, null)));
 				int errors = 0;
 				int warnings = 0;
-				IEnumerable<ResourceItem> actual = ResourceParser.Parse(main, true, [path], _ => errors++, _ => warnings++);
+				IEnumerable<ResourceItem> actual = ResourceParser.Parse(main, true, [path], (f, s) => errors++, (f, s) => warnings++);
 				Assert.IsFalse(actual.Any());
-				Assert.AreEqual(0, warnings);
 				Assert.IsTrue(0 < errors);
 			};
 
@@ -492,7 +491,7 @@ namespace StrongTypeResourceUnitTests {
 
 			warning("e", "f");
 			error("d", "zxc");
-			warning("c", "{1}");
+			error("c", "{1}");
 		}
 	}
 }

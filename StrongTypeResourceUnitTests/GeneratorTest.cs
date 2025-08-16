@@ -154,7 +154,7 @@ namespace StrongTypeResourceUnitTests {
 		public void ParserDebugTest() {
 			string resxFile = Path.Combine(this.TestContext!.TestRunDirectory!, @"..\..\..\StrongTypeResourceTest\NewResx\Resources.resx");
 			Assert.IsTrue(File.Exists(resxFile), "Resx file does not exist: " + resxFile);
-			List<ResourceItem> list = ResourceParser.Parse(resxFile, true, Enumerable.Empty<string>(), s => this.TestContext!.WriteLine(s), s => this.TestContext!.WriteLine(s)).ToList();
+			List<ResourceItem> list = ResourceParser.Parse(resxFile, true, Enumerable.Empty<string>(), (f, s) => this.TestContext!.WriteLine(s), (f, s) => this.TestContext!.WriteLine(s)).ToList();
 			Assert.AreEqual(7, list.Count, "Unexpected number of resources parsed from resx file.");
 		}
 
@@ -166,7 +166,7 @@ namespace StrongTypeResourceUnitTests {
 				bool result = generator.Execute();
 				Assert.IsFalse(result, "Generator should fail on bad root element in resx file.");
 			});
-			StringAssert.Contains(errors, "root: Root element is not <root>");
+			StringAssert.Contains(errors, "error : 'BadRoot' Root element is not <root>");
 		}
 
 		[TestMethod]
@@ -177,7 +177,7 @@ namespace StrongTypeResourceUnitTests {
 				bool result = generator.Execute();
 				Assert.IsFalse(result, "Generator should fail on bad root element in resx file.");
 			});
-			StringAssert.Contains(errors, "data: Resource name is missing");
+			StringAssert.Contains(errors, "error : 'data' Resource name is missing");
 		}
 
 		[TestMethod]
@@ -188,7 +188,7 @@ namespace StrongTypeResourceUnitTests {
 				bool result = generator.Execute();
 				Assert.IsFalse(result, "Generator should fail on bad root element in resx file.");
 			});
-			StringAssert.Contains(errors, "StringText: Resource value is missing");
+			StringAssert.Contains(errors, "error : 'StringText' resource value is missing");
 		}
 
 		[TestMethod]
@@ -199,7 +199,7 @@ namespace StrongTypeResourceUnitTests {
 				bool result = generator.Execute();
 				Assert.IsFalse(result, "Generator should fail on bad root element in resx file.");
 			});
-			StringAssert.Contains(errors, "StringDup: Resource value is duplicated: Hello, StringDup 1");
+			StringAssert.Contains(errors, "error : 'StringDup' resource value is duplicated: Hello, StringDup 1");
 		}
 
 		[TestMethod]
@@ -210,7 +210,7 @@ namespace StrongTypeResourceUnitTests {
 				bool result = generator.Execute();
 				Assert.IsFalse(result, "Generator should fail on bad root element in resx file.");
 			});
-			StringAssert.Contains(errors, "CommentDup: Resource comment is duplicated: Comment 1");
+			StringAssert.Contains(errors, "error : 'CommentDup' resource comment is duplicated: Comment 1");
 		}
 
 		[TestMethod]
@@ -222,8 +222,8 @@ namespace StrongTypeResourceUnitTests {
 				Assert.IsTrue(result, "Generator should fail on bad root element in resx file.");
 			});
 
-			StringAssert.Contains(errors, "warning: UnexpectedNode: Unexpected node: hello");
-			StringAssert.Contains(errors, "warning: UnexpectedNode: Unexpected node: world");
+			StringAssert.Contains(errors, "warning : 'UnexpectedNode' unexpected node: hello");
+			StringAssert.Contains(errors, "warning : 'UnexpectedNode' unexpected node: world");
 		}
 
 		[TestMethod]
@@ -234,7 +234,7 @@ namespace StrongTypeResourceUnitTests {
 				bool result = generator.Execute();
 				Assert.IsFalse(result, "Generator should fail on bad root element in resx file.");
 			});
-			StringAssert.Contains(errors, "NameDuplicated.resx is corrupted: 'name' is a duplicate attribute name");
+			StringAssert.Contains(errors, ".resx file is corrupted: 'name' is a duplicate attribute name");
 		}
 
 		[TestMethod]
@@ -245,7 +245,7 @@ namespace StrongTypeResourceUnitTests {
 				bool result = generator.Execute();
 				Assert.IsFalse(result, "Generator should fail on bad root element in resx file.");
 			});
-			StringAssert.Contains(errors, "TypeDuplicated.resx is corrupted: 'type' is a duplicate attribute name");
+			StringAssert.Contains(errors, ".resx file is corrupted: 'type' is a duplicate attribute name");
 		}
 
 		[TestMethod]

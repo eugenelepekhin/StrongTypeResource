@@ -118,15 +118,15 @@ namespace StrongTypeResource {
 		public override bool Execute() {
 			this.LogMessage("StrongTypeResourceGenerator started");
 			if(string.IsNullOrWhiteSpace(this.ProjectDirectory)) {
-				this.LogError("StrongTypeResourceGenerator: ProjectDirectory is not set.");
+				this.LogError(null, "StrongTypeResourceGenerator: ProjectDirectory is not set.");
 				return false;
 			}
 			if(string.IsNullOrWhiteSpace(this.CodeOutputPath)) {
-				this.LogError("StrongTypeResourceGenerator: CodeOutputPath is not set.");
+				this.LogError(null, "StrongTypeResourceGenerator: CodeOutputPath is not set.");
 				return false;
 			}
 			if(string.IsNullOrWhiteSpace(this.RootNamespace)) {
-				this.LogError("StrongTypeResourceGenerator: RootNamespace is not set.");
+				this.LogError(null, "StrongTypeResourceGenerator: RootNamespace is not set.");
 				return false;
 			}
 			if(this.ResxFiles != null && 0 < this.ResxFiles.Length) {
@@ -137,30 +137,30 @@ namespace StrongTypeResource {
 				try {
 					return this.Generate();
 				} catch(XmlException xmlException) {
-					this.LogError($"StrongTypeResourceGenerator: .resx file {xmlException.SourceUri} is corrupted: {xmlException.Message}");
+					this.LogError(xmlException.SourceUri, $".resx file is corrupted: {xmlException.Message}");
 				} catch(IOException ioException) {
-					this.LogError($"StrongTypeResourceGenerator: IO error occurred while processing .resx files: {ioException.Message}");
+					this.LogError(null, $"IO error occurred while processing .resx files: {ioException.Message}");
 				} catch(Exception exception) {
-					this.LogError($"StrongTypeResourceGenerator: Unexpected error occurred: {exception.Message}");
+					this.LogError(null, $"Unexpected error occurred: {exception.Message}");
 				}
 				return false;
 			}
 			return true;
 		}
 
-		private void LogError(string message) {
+		private void LogError(string? file, string message) {
 			if (this.LogToConsole) {
-				Console.Error.WriteLine(message);
+				Console.Error.WriteLine($"{file ?? string.Empty}: error : {message}");
 			} else {
-				this.Log.LogError(message);
+				this.Log.LogError(null, null, null, file, 0, 0, 0, 0, message);
 			}
 		}
 
-		private void LogWarning(string message) {
+		private void LogWarning(string? file, string message) {
 			if (this.LogToConsole) {
-				Console.Error.WriteLine(message);
+				Console.Error.WriteLine($"{file ?? string.Empty}: warning : {message}");
 			} else {
-				this.Log.LogWarning(message);
+				this.Log.LogWarning(null, null, null, file, 0, 0, 0, 0, message);
 			}
 		}
 
@@ -172,7 +172,7 @@ namespace StrongTypeResource {
 			}
 		}
 
-		private List<ResourceGroup> BuildGroups(Action<string> errorMessage, Action<string> warningMessage) {
+		private List<ResourceGroup> BuildGroups(Action<string?, string> errorMessage, Action<string?, string> warningMessage) {
 			// Remove all duplicate resx files by their ItemSpec (path)
 			Dictionary<string, ITaskItem> uniqueResxFiles = new Dictionary<string, ITaskItem>(StringComparer.OrdinalIgnoreCase);
 			foreach(ITaskItem item in this.ResxFiles!) {
@@ -197,11 +197,11 @@ namespace StrongTypeResource {
 					string resourceRoot = Path.GetDirectoryName(resourcePath) ?? string.Empty;
 					string resourceFile = Path.GetFileNameWithoutExtension(resourcePath);
 					if(Path.HasExtension(resourceFile)) {
-						warningMessage(
+						warningMessage(Path.Combine(this.ProjectDirectory, resourcePath),
 							string.Format(
 								CultureInfo.InvariantCulture,
 								"StrongTypeResourceGenerator: The main resource file '{0}' has culture extension in its name. The main resource files should not have any culture extensions and be the assembly neutral culture.",
-								resourcePath
+								Path.GetFileName(resourcePath)
 							)
 						);
 					}
@@ -247,8 +247,8 @@ namespace StrongTypeResource {
 		private bool Generate() {
 			int errorCount = 0;
 			int warningCount = 0;
-			void error(string message) { errorCount++; this.LogError(message); }
-			void warning(string message) { warningCount++; this.LogWarning(message); }
+			void error(string? file, string message) { errorCount++; this.LogError(file, message); }
+			void warning(string? file, string message) { warningCount++; this.LogWarning(file, message); }
 
 			List<ResourceGroup> groups = this.BuildGroups(error, warning);
 			foreach(ResourceGroup group in groups) {

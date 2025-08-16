@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml;
@@ -17,7 +18,7 @@ namespace StrongTypeResource {
 	internal sealed class ResourceParser {
 		private static readonly char[] splitter = { ',' };
 
-		public static IEnumerable<ResourceItem> Parse(string file, bool enforceParameterDeclaration, IEnumerable<string> satellites, Action<string> errorMessage, Action<string> warningMessage) {
+		public static IEnumerable<ResourceItem> Parse(string file, bool enforceParameterDeclaration, IEnumerable<string> satellites, Action<string?, string> errorMessage, Action<string?, string> warningMessage) {
 			ResourceParser parser = new ResourceParser(enforceParameterDeclaration, satellites, errorMessage, warningMessage);
 
 			List<ResourceItem> list = new List<ResourceItem>();
@@ -27,7 +28,7 @@ namespace StrongTypeResource {
 				(string name, string value, string comment) => assign(parser.GenerateString(name, value, comment))
 			);
 			if(parser.errorCount == 0 && parser.satellites.Any()) {
-				parser.VerifySatellites(file, list);
+				parser.VerifySatellites(Path.GetFileName(file), list);
 			}
 			if(parser.errorCount == 0) {
 				return list;
@@ -47,10 +48,10 @@ namespace StrongTypeResource {
 		private readonly Regex parameterDeclaration = new Regex(@"^(?<type>[A-Za-z_][A-Za-z_0-9]*(\s*\.\s*[A-Za-z_][A-Za-z_0-9]*)*)\s+(?<name>[A-Za-z_][A-Za-z_0-9]*)$", regexOptions);
 
 		private int errorCount;
-		private readonly Action<string> errorMessage;
-		private readonly Action<string> warningMessage;
+		private readonly Action<string?, string> errorMessage;
+		private readonly Action<string?, string> warningMessage;
 
-		private ResourceParser(bool enforceParameterDeclaration, IEnumerable<string> satellites, Action<string> errorMessage, Action<string> warningMessage) {
+		private ResourceParser(bool enforceParameterDeclaration, IEnumerable<string> satellites, Action<string?, string> errorMessage, Action<string?, string> warningMessage) {
 			this.currentFile = string.Empty; // will be set in Parse
 			this.enforceParameterDeclaration = enforceParameterDeclaration;
 			this.satellites = satellites;
@@ -72,7 +73,7 @@ namespace StrongTypeResource {
 			using XmlReader reader = XmlReader.Create(file, xmlReaderSettings);
 			reader.MoveToContent();
 			if(reader.NodeType != XmlNodeType.Element || reader.Name != "root") {
-				this.Error("root", "Root element is not <root>");
+				this.Error(reader.Name, "Root element is not <root>");
 				return;
 			}
 			while(reader.Read()) {
@@ -92,7 +93,7 @@ namespace StrongTypeResource {
 						continue;
 					}
 					if(reader.IsEmptyElement) {
-						this.Error(name, "Resource value is missing");
+						this.Error(name, "resource value is missing");
 						continue;
 					}
 					string? value = null;
@@ -102,16 +103,16 @@ namespace StrongTypeResource {
 							if(reader.NodeType == XmlNodeType.Element) {
 								if(reader.Name == "value") {
 									if(value != null) {
-										this.Error(name, "Resource value is duplicated: " + value);
+										this.Error(name, "resource value is duplicated: " + value);
 									}
 									value = reader.ReadElementContentAsString(); // move to the next node
 								} else if(reader.Name == "comment") {
 									if(comment != null) {
-										this.Error(name, "Resource comment is duplicated: " + comment);
+										this.Error(name, "resource comment is duplicated: " + comment);
 									}
 									comment = reader.ReadElementContentAsString(); // move to the next node
 								} else {
-									this.Warning(name, "Unexpected node: " + reader.Name);
+									this.Warning(name, "unexpected node: " + reader.Name);
 									reader.ReadElementContentAsString(); // just skip this node
 								}
 							} else {
@@ -120,7 +121,7 @@ namespace StrongTypeResource {
 						}
 					}
 					if(value == null) {
-						this.Error(name, "Resource value is missing");
+						this.Error(name, "resource value is missing");
 						continue;
 					}
 					if(comment == null) {
@@ -148,7 +149,7 @@ namespace StrongTypeResource {
 							ResourceItem? satellite = this.GenerateInclude(name, value, comment);
 							// satellite == null on errors. So, do not generate yet another one.
 							if(satellite != null && item.Type != satellite.Type) {
-								this.Error(name, "the resource has a different type than what is defined in the main resource file \"{0}\".", mainFile);
+								this.Error(name, "has a different type than what is defined in the main resource file \"{0}\".", mainFile);
 							}
 						} else {
 							unknownResource(name);
@@ -157,9 +158,9 @@ namespace StrongTypeResource {
 					(string name, string value, string comment) => {
 						if(items.TryGetValue(name, out ResourceItem? item)) {
 							if(!item.SuppressValidation) {
-								int count = this.ValidateFormatItems(name, value, false);
+								int count = this.ValidateFormatItems(name, value);
 								if(count != (item.Parameters == null ? 0 : item.Parameters.Count)) {
-									this.Warning(name, "resource has a different number of format parameters than defined in the main resource file \"{0}\".", mainFile);
+									this.Warning(name, "has a different number of format parameters than defined in the main resource file \"{0}\".", mainFile);
 								} else if(item.LocalizationVariants != null) {
 									if(!item.LocalizationVariants.Contains(value)) {
 										this.Error(name, "provided value '{0}' doesn't match any of the allowed options: ({1}) defined in main resource file: \"{2}\".", value, string.Join(", ", item.LocalizationVariants), mainFile);
@@ -176,12 +177,12 @@ namespace StrongTypeResource {
 
 		private void Error(string nodeName, string errorText, params object[] args) {
 			//"C:\Projects\TestApp\TestApp\Subfolder\TextMessage.resx(10,1): error: nodeName: my error"
-			this.errorMessage($"{this.currentFile}: error: {nodeName}: {ResourceParser.Format(errorText, args)}");
+			this.errorMessage(this.currentFile, $"'{nodeName}' {ResourceParser.Format(errorText, args)}");
 			this.errorCount++;
 		}
 
 		private void Warning(string nodeName, string errorText, params object[] args) {
-			this.warningMessage($"{this.currentFile}: warning: {nodeName}: {ResourceParser.Format(errorText, args)}");
+			this.warningMessage(this.currentFile, $"'{nodeName}' {ResourceParser.Format(errorText, args)}");
 		}
 
 		private static string Format(string format, params object[] args) {
@@ -189,7 +190,7 @@ namespace StrongTypeResource {
 		}
 
 		private ResourceItem? GenerateInclude(string name, string value, string comment) {
-			void corrupted(string nodeName) => this.Error(nodeName, "Structure of the value node is corrupted.");
+			void corrupted(string nodeName) => this.Error(nodeName, "structure of the value node is corrupted.");
 			string[] list = value.Split(';');
 			if(list.Length < 2) {
 				corrupted(name);
@@ -244,7 +245,7 @@ namespace StrongTypeResource {
 		}
 
 		private void ParseFormatParameters(ResourceItem item, string comment) {
-			int count = this.ValidateFormatItems(item.Name, item.Value, true);
+			int count = this.ValidateFormatItems(item.Name, item.Value);
 			if(0 < count) {
 				Match paramsMatch = this.functionParameters.Match(comment);
 				if(paramsMatch.Success) {
@@ -265,7 +266,7 @@ namespace StrongTypeResource {
 					}
 					item.Parameters = parameterList;
 				} else {
-					string error = "string value contains formating placeholders, but function parameters declaration is missing in the comment.";
+					string error = "string value contains formating placeholders, but the function parameters declaration is missing in the comment.";
 					if(this.enforceParameterDeclaration) {
 						this.Error(item.Name, error);
 					} else {
@@ -280,11 +281,10 @@ namespace StrongTypeResource {
 		/// </summary>
 		/// <param name="name"></param>
 		/// <param name="value"></param>
-		/// <param name="requareAllParameters"></param>
 		/// <returns></returns>
-		private int ValidateFormatItems(string name, string value, bool requareAllParameters) {
+		private int ValidateFormatItems(string name, string value) {
 			int error() {
-				this.Error(name, "Invalid formating item in: \"{0}\"", value);
+				this.Error(name, "invalid formating item in: \"{0}\"", value);
 				return -1;
 			}
 			HashSet<int> indexes = new HashSet<int>();
@@ -292,7 +292,7 @@ namespace StrongTypeResource {
 				if('}' == value[i]) {
 					i++;
 					if(!(i < value.Length && '}' == value[i])) {
-						this.Error(name, "Input string is not in correct format: \"{0}\"", value);
+						this.Error(name, "input string is not in correct format: \"{0}\"", value);
 						return -1;
 					}
 				} else if('{' == value[i]) {
@@ -371,12 +371,7 @@ namespace StrongTypeResource {
 			int current = 0;
 			foreach(int index in indexes.OrderBy(i => i)) {
 				if(index != current++) {
-					if(requareAllParameters) {
-						this.Error(name, "parameter number {0} is missing in the string", current - 1);
-					} else {
-						this.Warning(name, "parameter number {0} is missing in the string", current - 1);
-						break;
-					}
+					this.Error(name, "parameter number {0} is missing in the string \"{1}\"", current - 1, value);
 					return -1; // report just one missing parameter number
 				}
 			}
