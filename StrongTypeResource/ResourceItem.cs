@@ -2,17 +2,95 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace StrongTypeResource {
 	internal sealed class ResourceItem {
+		internal sealed class Parser {
+			private const RegexOptions regexOptions = RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Singleline;
+			// - suppress validation of item
+			private readonly Regex suppressValidation = new Regex(@"^\s*-", regexOptions);
+			// !(hello, world)
+			private readonly Regex variantList = new Regex(@"^\s*!\((?<list>.*)\)", regexOptions);
+			// {int index, string message} hello, world {System.Int32 param} comment {} {MyType value1, Other value2, OneMore last}
+			private readonly Regex parameterList = new Regex(@"^\s*\{(?<param>[^}]+)\}", regexOptions);
+			// a.b.c.d a, int i, string text, System.Int32 index
+			private readonly Regex parameterDeclaration = new Regex(@"^(?<type>[A-Za-z_][A-Za-z_0-9]*(\s*\.\s*[A-Za-z_][A-Za-z_0-9]*)*)\s+(?<name>[A-Za-z_][A-Za-z_0-9]*)$", regexOptions);
+
+			public Action<string, string> Error { get; }
+			public Action<string, string> Warning { get; }
+
+			public Parser(Action<string, string> error, Action<string, string> warning) {
+				this.Error = error;
+				this.Warning = warning;
+			}
+
+			public bool ParseComment(string name, string? comment, out bool suppressValidation, out IList<string>? localizationVariants, out IList<Parameter>? parameters) {
+				suppressValidation = false;
+				localizationVariants = null;
+				parameters = null;
+
+				if(string.IsNullOrWhiteSpace(comment)) {
+					return true; // No comment to parse
+				}
+
+				// Check for suppression of validation
+				if(this.suppressValidation.IsMatch(comment)) {
+					suppressValidation = true;
+					return true; // Suppression found, no further parsing needed
+				}
+
+				// Check for localization variants
+				Match match = this.variantList.Match(comment);
+				if(match.Success) {
+					string listText = match.Groups["list"].Value.Trim();
+					string[] variants = listText.Split(',');
+					List<string> list = new List<string>();
+					foreach(string var in variants) {
+						string text = var.Trim();
+						if(0 < text.Length) {
+							list.Add(text);
+						}
+					}
+					localizationVariants = list;
+					return true; // Localization variants found
+				}
+
+				Match paramsList = this.parameterList.Match(comment);
+				if(paramsList.Success) {
+					string[] list = paramsList.Groups["param"].Value.Split(',');
+					List<Parameter> parameterList = new List<Parameter>(list.Length);
+					foreach(string text in list) {
+						Match parameterMatch = this.parameterDeclaration.Match(text.Trim());
+						if(parameterMatch.Success) {
+							parameterList.Add(new Parameter(parameterMatch.Groups["type"].Value.Trim(), parameterMatch.Groups["name"].Value.Trim()));
+						} else {
+							this.Error(name, $"bad parameter declaration: {text.Trim()}");
+							return false; // Invalid parameter declaration
+						}
+					}
+					if(0 < parameterList.Count) {
+						parameters = parameterList;
+						return true; // Parameters found and parsed
+					} else {
+						this.Error(name, $"invalid parameter declaration found in the comment: {comment!.Trim()}");
+						return false; // No parameters found
+					}
+				}
+
+				return true; // No parameters or localization variants found, comment is valid
+			}
+		}
+
 		public string Name { get; }
 		public string Value { get; }
 		public string Type { get; }
 		/// <summary>
 		/// List of parameters if format placeholders are present, null otherwise.
 		/// </summary>
-		public IList<Parameter>? Parameters { get; set; }
+		public IList<Parameter>? Parameters { get; private set; }
 		/// <summary>
 		/// List of variant acceptable for this resource if it specified like: !(one, two, three) null otherwise.
 		/// </summary>
@@ -20,12 +98,31 @@ namespace StrongTypeResource {
 		/// <summary>
 		/// True if minus was in the first character of comment to suppress validation of satellites.
 		/// </summary>
-		public bool SuppressValidation { get; set; }
+		public bool SuppressValidation { get; private set; }
+		public bool IsEnumeration => this.LocalizationVariants != null && 0 < this.LocalizationVariants.Count;
+		public bool IsFunction => this.Parameters != null && 0 < this.Parameters.Count;
 
 		public ResourceItem(string name, string value, string type) {
 			this.Name = name;
 			this.Value = value;
 			this.Type = type;
+		}
+
+		public bool ParseComment(Parser parser, string? comment) {
+			if(parser.ParseComment(this.Name, comment, out bool suppressValidation,  out IList<string>? localizationVariants, out IList<Parameter>? parameters)) {
+				Debug.Assert(
+					localizationVariants == null && parameters == null ||
+					!suppressValidation && localizationVariants != null && parameters == null ||
+					!suppressValidation && localizationVariants == null && parameters != null,
+					"Invalid combination of suppressValidation, localizationVariants and parameters."
+				);
+				this.SuppressValidation = suppressValidation;
+				this.LocalizationVariants = localizationVariants;
+				this.Parameters = parameters;
+				return true; // Comment parsed successfully
+			} else {
+				return false; // Error in parsing comment
+			}
 		}
 
 		/// <summary>
@@ -101,6 +198,145 @@ namespace StrongTypeResource {
 				return "((PseudoResourceManager)ResourceManager).GetBaseString(new string[]{" + text.ToString() + "}, ";
 			}
 			return "ResourceManager.GetString(";
+		}
+
+		public bool IsValidEnumerationOption(string value) {
+			if(this.IsEnumeration) {
+				value = value.Trim();
+				return this.LocalizationVariants!.Any(variant => variant == value);
+			}
+			return false; // Not a valid enumeration option
+		}
+
+		public bool IsValidFormat(int index, string formatString) {
+			if(this.IsFunction && index < this.Parameters!.Count) {
+				string type = this.Parameters[index].Type;
+				switch(type) {
+				case "DateTime":
+				case "System.DateTime":
+				case "DateTimeOffset":
+				case "System.DateTimeOffset":
+					return ResourceItem.ValidateDateTime(formatString);
+
+				case "byte":
+				case "Byte":
+				case "System.Byte":
+
+				case "sbyte":
+				case "SByte":
+				case "System.SByte":
+
+				case "short":
+				case "Int16":
+				case "System.Int16":
+
+				case "ushort":
+				case "UInt16":
+				case "System.UInt16":
+
+				case "int":
+				case "Int32":
+				case "System.Int32":
+
+				case "uint":
+				case "UInt32":
+				case "System.UInt32":
+
+				case "long":
+				case "Int64":
+				case "System.Int64":
+
+				case "ulong":
+				case "UInt64":
+				case "System.UInt64":
+
+				case "float":
+				case "Single":
+				case "System.Single":
+
+				case "double":
+				case "Double":
+				case "System.Double":
+
+
+				case "decimal":
+				case "Decimal":
+				case "System.Decimal":
+
+				case "BigInteger":
+				case "Numerics.BigInteger":
+				case "System.Numerics.BigInteger":
+					return ResourceItem.ValidateInt(formatString);
+
+				case "Guid":
+				case "System.Guid":
+					return ResourceItem.ValidateGuid(formatString);
+
+				case "TimeSpan":
+				case "System.TimeSpan":
+					return ResourceItem.ValidateTimeSpan(formatString);
+
+				default:
+					return ResourceItem.ValidateEnum(formatString);
+				}
+			}
+			return false;
+		}
+
+		private static bool ValidateDateTime(string formatString) {
+			try {
+				string format = $"{{0:{formatString}}}";
+				string result = string.Format(CultureInfo.InvariantCulture, format, DateTime.Now);
+				return true; // Valid DateTime format
+			} catch (FormatException) {
+				return false; // Invalid DateTime format
+			}
+		}
+
+		private static bool ValidateInt(string formatString) {
+			try {
+				string format = $"{{0:{formatString}}}";
+				string result = string.Format(CultureInfo.InvariantCulture, format, 42);
+				return true; // Valid integer format
+			} catch (FormatException) {
+				return false; // Invalid integer format
+			}
+		}
+
+		private static bool ValidateGuid(string formatString) {
+			try {
+				string format = $"{{0:{formatString}}}";
+				string result = string.Format(CultureInfo.InvariantCulture, format, Guid.NewGuid());
+				return true; // Valid Guid format
+			} catch (FormatException) {
+				return false; // Invalid Guid format
+			}
+		}
+
+		private static bool ValidateTimeSpan(string formatString) {
+			try {
+				string format = $"{{0:{formatString}}}";
+				string result = string.Format(CultureInfo.InvariantCulture, format, TimeSpan.FromTicks(12345));
+				return true; // Valid TimeSpan format
+			} catch (FormatException) {
+				return false; // Invalid TimeSpan format
+			}
+		}
+
+		public static bool ValidateEnum(string formatString) {
+			switch(formatString) {
+				case "G":
+				case "g":
+				case "F":
+				case "f":
+				case "D":
+				case "d":
+				case "X":
+				case "x":
+					return true; // Valid enum format
+				default:
+					return false; // Invalid enum format
+			}
 		}
 	}
 }

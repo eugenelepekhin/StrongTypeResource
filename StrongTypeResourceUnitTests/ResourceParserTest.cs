@@ -62,7 +62,7 @@ namespace StrongTypeResourceUnitTests {
 		private void ExpectErrorMessage(string expecting, string? actual) {
 			this.TestContext.WriteLine($"Expected error message: {expecting}");
 			this.TestContext.WriteLine($"Actual error message: {actual ?? "NULL"}");
-			Assert.IsTrue(!string.IsNullOrEmpty(actual) && Regex.IsMatch(actual, expecting, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Singleline));
+			Assert.IsTrue(!string.IsNullOrEmpty(actual) && Regex.IsMatch(actual, expecting, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Singleline), "Unexpected error message.");
 		}
 
 		[TestMethod]
@@ -108,7 +108,7 @@ namespace StrongTypeResourceUnitTests {
 		public void EmptyValueTest() {
 			string expected = string.Empty;
 			string path = this.WriteFile(R(
-				R("a", expected, "{int i, int j}")
+				R("a", expected, null)
 			));
 			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], this.ThrowOnErrorMessage, this.ThrowOnErrorMessage);
 			Assert.AreEqual(1, actual.Count());
@@ -127,7 +127,7 @@ namespace StrongTypeResourceUnitTests {
 		public void MultiLineCommentTest() {
 			string expected = "first line\nsecond line\nthird line\nforth line\nfifth line";
 			string path = this.WriteFile(R(
-				R("a", expected, "{int i, int j}")
+				R("a", expected, null)
 			));
 			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], this.ThrowOnErrorMessage, this.ThrowOnErrorMessage);
 			Assert.AreEqual(1, actual.Count());
@@ -188,23 +188,28 @@ namespace StrongTypeResourceUnitTests {
 		}
 
 		[TestMethod]
+		public void ErrorMissingFormatItemsTest() {
+			this.AssertError("a", "d0c1", "{int count, double percent}", "no format items are used in the value, but function parameters are declared in the comment");
+		}
+
+		[TestMethod]
 		public void MissingFormat0Test() {
-			this.AssertError("a", "{2}{1}", "{int i, int j}", "parameter number 0 is missing in the string");
+			this.AssertError("a", "{2}{1}", "{int i, int j}", "parameter #0 is not used in the format string");
 		}
 
 		[TestMethod]
 		public void MissingFormat1Test() {
-			this.AssertError("a", "{2}{0}", "{int i, int j}", "parameter number 1 is missing in the string");
+			this.AssertError("a", "{2}{0}", "{int i, int j}", "parameter #1 is not used in the format string");
 		}
 
 		[TestMethod]
 		public void WrongNumberOfParameters1Test() {
-			this.AssertError("a", "{2}{0}{1}", "{int i, int j}", "the number of format placeholders in the string doesn't match count of parameters listed in the comment");
+			this.AssertError("a", "{2}{0}{1}", "{int i, int j}", "the number of format placeholders in the string doesn't match number of parameters listed in the comment");
 		}
 
 		[TestMethod]
 		public void WrongNumberOfParameters2Test() {
-			this.AssertError("a", "{2}{0}{1}", "{int i, int j, int k, int l}", "the number of format placeholders in the string doesn't match count of parameters listed in the comment");
+			this.AssertError("a", "{2}{0}{1}", "{int i, int j, int k, int l}", "the number of format placeholders in the string doesn't match number of parameters listed in the comment");
 		}
 
 		[TestMethod]
@@ -365,11 +370,11 @@ namespace StrongTypeResourceUnitTests {
 			void error(string value, string message) {
 				this.AssertError("a" + ++count, value, null, message);
 			};
-			string error1 = "Invalid formating item";
+			string error1 = "invalid format item";
 			string one = "{int i}";
 
 			// test escaping curly
-			error("}", "Input string is not in correct format");
+			error("}", error1);
 			valid("}}", null);
 			error("{", error1);
 			valid("{{", null);
@@ -394,17 +399,17 @@ namespace StrongTypeResourceUnitTests {
 
 			//test validation of format string
 			valid("{0:x}", one);
-			valid("{0:}", one);
+			error("{0:}", error1);
 			valid("{0  : C}", one);
 			valid("{0, -10  : G}", one);
-			valid("{0: }}{{ }} x}", one);
-			valid("{0: }}{{ }}   }", one);
+			error("{0: }}{{ }} x}", error1);
+			error("{0: }}{{ }}   }", error1);
 			error("{0: { }", error1);
 			error("{0:}}", error1);
 
 			//test validation of missing parameter numbers
 			valid("{2}{0}{1}", "{int i, int j, int k}");
-			error("{2}{0}", "parameter number 1 is missing in the string");
+			error("{2}{0}", "string value contains formating placeholders, but the function parameters declaration is missing in the comment");
 		}
 
 		[TestMethod]
@@ -430,16 +435,16 @@ namespace StrongTypeResourceUnitTests {
 			
 			valid(this.WriteFile(R(R("a", "{0}{{1:D}}", "{int i}"))),				1);
 			valid(this.WriteFile(R(R("a", "{0}{{{1:D}}}", "{int i, int j}"))),		2);
-			valid(this.WriteFile(R(R("a", "{0:ddddd}}MMMMM}", "{DateTime i}"))),	1);
-			valid(this.WriteFile(R(R("a", "{0:ddddd}}a}MMMMM", "{DateTime i}"))),	1);
 			valid(this.WriteFile(R(R("a", "{0}{{{1:D}", "{DateTime i, int j}"))),	2);
 			valid(this.WriteFile(R(R("a", "{0}{1:D}}}", "{DateTime i, int j}"))),	2);
 			valid(this.WriteFile(R(R("a", "{0}{1:D}", "{DateTime i, int j}"))),		2);
-			valid(this.WriteFile(R(R("a", "{0:ddddd}}}}MMMMM}", "{DateTime i}"))),	1);
 			valid(this.WriteFile(R(R("a", "}}{0}", "{int i}"))),					1);
 			valid(this.WriteFile(R(R("a", "a{0,-45:dd:mm:yyyy}", "{int i}"))),		1);
 			valid(this.WriteFile(R(R("a", "a {0  ,  -45  :  dd:mm:yyyy  }", "{int i}"))),		1);
 
+			error(this.WriteFile(R(R("a", "{0:ddddd}}}}MMMMM}", "{DateTime i}"))));
+			error(this.WriteFile(R(R("a", "{0:ddddd}}a}MMMMM", "{DateTime i}"))));
+			error(this.WriteFile(R(R("a", "{0:ddddd}}MMMMM}", "{DateTime i}"))));
 			error(this.WriteFile(R(R("a", "{0:ddddd}}a}MMMMM}", "{DateTime i}"))));
 			error(this.WriteFile(R(R("a", "{0:ddddd}}}MMMMM}", "{DateTime i}"))));
 			error(this.WriteFile(R(R("a", "}{0}", "{int i}"))));
@@ -470,7 +475,15 @@ namespace StrongTypeResourceUnitTests {
 				string path = this.WriteFile(R(R(name, value, null)));
 				int errors = 0;
 				int warnings = 0;
-				IEnumerable<ResourceItem> actual = ResourceParser.Parse(main, true, [path], (f, s) => errors++, (f, s) => warnings++);
+				void err(string? file, string message) {
+					this.TestContext.WriteLine($"Error in file {file}: {message}");
+					errors++;
+				}
+				void warn(string? file, string message) {
+					this.TestContext.WriteLine($"Warning in file {file}: {message}");
+					warnings++;
+				}
+				IEnumerable<ResourceItem> actual = ResourceParser.Parse(main, false, [path], err, warn);
 				Assert.AreEqual(count, actual.Count());
 				Assert.AreEqual(0, errors);
 				Assert.IsTrue(0 < warnings);
