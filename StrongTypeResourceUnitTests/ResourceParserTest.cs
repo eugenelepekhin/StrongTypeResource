@@ -62,7 +62,7 @@ namespace StrongTypeResourceUnitTests {
 		private void ExpectErrorMessage(string expecting, string? actual) {
 			this.TestContext.WriteLine($"Expected error message: {expecting}");
 			this.TestContext.WriteLine($"Actual error message: {actual ?? "NULL"}");
-			Assert.IsTrue(!string.IsNullOrEmpty(actual) && Regex.IsMatch(actual, expecting, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Singleline), "Unexpected error message.");
+			Assert.IsTrue(!string.IsNullOrEmpty(actual) && Regex.IsMatch(actual, Regex.Escape(expecting), RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Singleline), "Unexpected error message.");
 		}
 
 		[TestMethod]
@@ -194,12 +194,12 @@ namespace StrongTypeResourceUnitTests {
 
 		[TestMethod]
 		public void MissingFormat0Test() {
-			this.AssertError("a", "{2}{1}", "{int i, int j}", "parameter #0 is not used in the format string");
+			this.AssertError("a", "{2}{1}", "{int i, int j}", "'a' format placeholder '{0}' is not used in the format string");
 		}
 
 		[TestMethod]
 		public void MissingFormat1Test() {
-			this.AssertError("a", "{2}{0}", "{int i, int j}", "parameter #1 is not used in the format string");
+			this.AssertError("a", "{2}{0}", "{int i, int j}", "'a' format placeholder '{1}' is not used in the format string");
 		}
 
 		[TestMethod]
@@ -336,7 +336,7 @@ namespace StrongTypeResourceUnitTests {
 
 		[TestMethod]
 		public void VariantsError1Test() {
-			this.AssertError("a", "b", "!(c, d, e)", @"provided value 'b' is not in the list of allowed options: \(c, d, e\)");
+			this.AssertError("a", "b", "!(c, d, e)", @"provided value 'b' is not in the list of allowed options: (c, d, e)");
 		}
 
 		[TestMethod]

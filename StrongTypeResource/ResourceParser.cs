@@ -227,9 +227,9 @@ namespace StrongTypeResource {
 							} else {
 								for(int i = 0; i < usedIndexes.Count; i++) {
 									if(!usedIndexes.TryGetValue(i, out List<string>? formats)) {
-										this.Error(item.Name, "parameter #{0} is not used in the format string", i);
+										this.Error(item.Name, "format placeholder '{{{0}}}' is not used in the format string", i);
 									} else if(formats != null && !formats.Any(f => item.IsValidFormat(i, f))) {
-										this.Error(item.Name, "format item #{0} has invalid format string in {1}", i, value);
+										this.Error(item.Name, "format item '{{{0}}}' has invalid format specifier in: {1}", i, value);
 									}
 								}
 							}
@@ -243,7 +243,7 @@ namespace StrongTypeResource {
 
 		[SuppressMessage("Performance", "CA1854:Prefer the 'IDictionary.TryGetValue(TKey, out TValue)' method")]
 		private bool ParseFormatItems(ResourceItem item, string value, Dictionary<int, List<string>?> usedIndexes) {
-			bool invalid() { this.Error(item.Name, "invalid format item in {0}", value); return false; }
+			bool invalid() { this.Error(item.Name, "invalid format item in: {0}", value); return false; }
 			int position = 0;
 			int length = value.Length;
 			bool isEos() => length <= position;
