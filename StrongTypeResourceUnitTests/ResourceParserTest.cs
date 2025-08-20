@@ -535,6 +535,7 @@ namespace StrongTypeResourceUnitTests {
 			valid("a", "{0:d}", "{Int16 i}");
 			valid("a", "{0:d}", "{int i}");
 			valid("a", "{0:d}", "{Int32 i}");
+			valid("a", "{0:d} {0:g} {0:f}", "{Int16 i}");
 
 			error("a", "{0:k}", "{int i}");
 
@@ -548,6 +549,9 @@ namespace StrongTypeResourceUnitTests {
 
 			error("a", "{0:z}", "{TimeSpan ts}");
 
+			valid("a", "{0:x}", "{MyEnum me}");
+
+			error("a", "{0:s}", "{MyEnum me}");
 		}
 	}
 }
