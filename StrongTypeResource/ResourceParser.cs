@@ -173,7 +173,7 @@ namespace StrongTypeResource {
 		}
 
 		private static string MainFileReference(string? prefix, string? fileName) {
-			return (fileName != null) ? ResourceParser.Format("{0} in main resource file: \"{1}\"", prefix ?? string.Empty, Path.GetFileName(fileName)) : string.Empty;
+			return (fileName != null) ? ResourceParser.Format("{0} in main resource file: \"{1}\"", prefix ?? string.Empty, fileName) : string.Empty;
 		}
 
 		private ResourceItem? GenerateInclude(string name, string value) {
@@ -228,7 +228,7 @@ namespace StrongTypeResource {
 								for(int i = 0; i < usedIndexes.Count; i++) {
 									if(!usedIndexes.TryGetValue(i, out List<string>? formats)) {
 										this.Error(item.Name, "format placeholder '{{{0}}}' is not used in the format string", i);
-									} else if(formats != null && !formats.Any(f => item.IsValidFormat(i, f))) {
+									} else if(formats != null && !formats.All(f => item.IsValidFormatString(i, f))) {
 										this.Error(item.Name, "format item '{{{0}}}' has invalid format specifier in: {1}", i, value);
 									}
 								}
@@ -272,7 +272,7 @@ namespace StrongTypeResource {
 								next();
 							}
 							if(!isNumber) return invalid();
-							if(!usedIndexes.ContainsKey(index)) {
+							if(!usedIndexes.ContainsKey(index)) { // a placeholder may occur more than once, so we don't overwrite the existing one
 								usedIndexes.Add(index, null);
 							}
 							skipWhitespace();
@@ -280,7 +280,7 @@ namespace StrongTypeResource {
 								next(); // skip comma
 								// width part of the format item
 								skipWhitespace();
-								if(current() == '-') next(); // skip sign. note there is not + sign in .net parsing
+								if(current() == '-') next(); // skip sign. note there is no check for + sign in .net parsing
 								isNumber = false;
 								int width = 0;
 								while('0' <= current() && current() <= '9') {
@@ -315,7 +315,7 @@ namespace StrongTypeResource {
 					}
 				} else if(current() == '}') {
 					next();
-					if(isEos() || current() != '}') return invalid(); // Allow escaped closing braces outside of a format item
+					if(isEos() || current() != '}') return invalid(); // Allow escaped closing braces outside of a format item, but not a singe ones.
 				}
 				next();
 			}

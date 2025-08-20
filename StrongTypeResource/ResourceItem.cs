@@ -19,7 +19,16 @@ namespace StrongTypeResource {
 			// a.b.c.d a, int i, string text, System.Int32 index
 			private readonly Regex parameterDeclaration = new Regex(@"^(?<type>[A-Za-z_][A-Za-z_0-9]*(\s*\.\s*[A-Za-z_][A-Za-z_0-9]*)*)\s+(?<name>[A-Za-z_][A-Za-z_0-9]*)$", regexOptions);
 
+			/// <summary>
+			/// Gets the delegate that reports error messages by providing the name of the resource and a descriptive message.
+			/// void Error(string name, string message);
+			/// </summary>
 			public Action<string, string> Error { get; }
+
+			/// <summary>
+			/// Gets the delegate that reports warning messages by providing the name of the resource and a descriptive message.
+			/// void Warning(string name, string message);
+			/// </summary>
 			public Action<string, string> Warning { get; }
 
 			public Parser(Action<string, string> error, Action<string, string> warning) {
@@ -208,7 +217,14 @@ namespace StrongTypeResource {
 			return false; // Not a valid enumeration option
 		}
 
-		public bool IsValidFormat(int index, string formatString) {
+		/// <summary>
+		/// Checks if the format string part of format item is valid for the parameter at the specified index.
+		/// For example, for numerical parameter it checks in {0,5:D} or {0:F2} or {0:G4} for validity of "D", "F2", "G4" format strings.
+		/// </summary>
+		/// <param name="index">Parameter number</param>
+		/// <param name="formatString">format string part of format item</param>
+		/// <returns></returns>
+		public bool IsValidFormatString(int index, string formatString) {
 			if(this.IsFunction && index < this.Parameters!.Count) {
 				string type = this.Parameters[index].Type;
 				switch(type) {

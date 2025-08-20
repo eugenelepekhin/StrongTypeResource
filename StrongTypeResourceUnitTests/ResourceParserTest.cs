@@ -538,6 +538,7 @@ namespace StrongTypeResourceUnitTests {
 			valid("a", "{0:d} {0:g} {0:f}", "{Int16 i}");
 
 			error("a", "{0:k}", "{int i}");
+			error("a", "{0:d} {0:k} {0:f}", "{Int16 i}");
 
 			valid("a", "{0:d}", "{Guid g}");
 			valid("a", "{0:P}", "{System.Guid g}");
