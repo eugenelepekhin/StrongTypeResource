@@ -6,6 +6,8 @@ using StrongTypeResource;
 namespace StrongTypeResourceUnitTests {
 	[TestClass]
 	public class ResourceParserTest {
+		private record Res(string name, string value, string? comment);
+
 		public TestContext TestContext { get; set; }
 
 		/// <summary>
@@ -13,15 +15,14 @@ namespace StrongTypeResourceUnitTests {
 		/// </summary>
 		/// <param name="resources"></param>
 		/// <returns></returns>
-		private string CreateResxContent(IEnumerable<string[]> resources) {
+		private string CreateResxContent(IEnumerable<Res> resources) {
 			StringBuilder text = new StringBuilder();
 			using(StringWriter stringWriter = new StringWriter(text)) {
 				ResXResourceWriter writer = new ResXResourceWriter(stringWriter);
-				foreach(string[] resource in resources) {
-					Assert.AreEqual(3, resource.Length);
-					ResXDataNode node = new ResXDataNode(resource[0], resource[1]);
-					if(!string.IsNullOrWhiteSpace(resource[2])) {
-						node.Comment = resource[2];
+				foreach(Res resource in resources) {
+					ResXDataNode node = new ResXDataNode(resource.name, resource.value);
+					if(!string.IsNullOrWhiteSpace(resource.comment)) {
+						node.Comment = resource.comment;
 					}
 					writer.AddResource(node);
 				}
@@ -39,20 +40,15 @@ namespace StrongTypeResourceUnitTests {
 			return Path.Combine(this.TestContext.TestRunDirectory!, this.TestContext.TestName + DateTime.UtcNow.Ticks.ToString() + ext);
 		}
 
-		private string WriteFile(IEnumerable<string[]> resources) {
+		private string WriteFile(IEnumerable<Res> resources) {
 			string path = this.TempFile();
 			string text = this.CreateResxContent(resources);
 			File.WriteAllText(path, text);
 			return path;
 		}
 
-		private string[] R(string name, string value, string? comment) {
-			return new string[] { name, value, comment! };
-		}
-
-		private string[][] R(params string[][] args) {
-			return args;
-		}
+		private Res R(string name, string value, string? comment) => new Res(name, value, comment);
+		private Res[] R(params Res[] args) => args;
 
 		private void ThrowOnErrorMessage(string? file, string message) {
 			this.TestContext.WriteLine($"Unexpected error message: {message}");
@@ -252,7 +248,7 @@ namespace StrongTypeResourceUnitTests {
 			Assert.AreEqual(0, errors);
 			Assert.AreEqual(0, warnings);
 			ResourceItem item = actual.First();
-			CollectionAssert.AreEqual(item.LocalizationVariants!.ToArray(), R("c", "d", "e"));
+			CollectionAssert.AreEqual(item.LocalizationVariants!.ToArray(), new string[] {"c", "d", "e"});
 		}
 
 		[TestMethod]
@@ -267,7 +263,7 @@ namespace StrongTypeResourceUnitTests {
 			Assert.AreEqual(0, errors);
 			Assert.AreEqual(0, warnings);
 			ResourceItem item = actual.First();
-			CollectionAssert.AreEqual(item.LocalizationVariants!.ToArray(), R("c", "{0}", "e"));
+			CollectionAssert.AreEqual(item.LocalizationVariants!.ToArray(), new string[] { "c", "{0}", "e" });
 		}
 
 		[TestMethod]
@@ -366,10 +362,10 @@ namespace StrongTypeResourceUnitTests {
 				Assert.AreEqual(1, actual.Count());
 				Assert.AreEqual(0, errors);
 				Assert.AreEqual(0, warnings);
-			};
+			}
 			void error(string value, string message) {
 				this.AssertError("a" + ++count, value, null, message);
-			};
+			}
 			string error1 = "invalid format item";
 			string one = "{int i}";
 
@@ -424,14 +420,14 @@ namespace StrongTypeResourceUnitTests {
 				ResourceItem item = actual.First();
 				Assert.AreEqual(parameterCount, item.Parameters!.Count);
 				Assert.IsNull(item.LocalizationVariants);
-			};
+			}
 			void error(string path) {
 				int errors = 0;
 				int warnings = 0;
 				IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], (f, s) => errors++, (f, s) => warnings++);
 				Assert.IsTrue(0 < errors);
 				Assert.IsFalse(actual.Any());
-			};
+			}
 			
 			valid(this.WriteFile(R(R("a", "{0}{{1:D}}", "{int i}"))),				1);
 			valid(this.WriteFile(R(R("a", "{0}{{{1:D}}}", "{int i, int j}"))),		2);
@@ -470,7 +466,7 @@ namespace StrongTypeResourceUnitTests {
 				Assert.AreEqual(count, actual.Count());
 				Assert.AreEqual(0, errors);
 				Assert.AreEqual(0, warnings);
-			};
+			}
 			void warning(string name, string value) {
 				string path = this.WriteFile(R(R(name, value, null)));
 				int errors = 0;
@@ -487,7 +483,7 @@ namespace StrongTypeResourceUnitTests {
 				Assert.AreEqual(count, actual.Count());
 				Assert.AreEqual(0, errors);
 				Assert.IsTrue(0 < warnings);
-			};
+			}
 			void error(string name, string value) {
 				string path = this.WriteFile(R(R(name, value, null)));
 				int errors = 0;
@@ -495,7 +491,7 @@ namespace StrongTypeResourceUnitTests {
 				IEnumerable<ResourceItem> actual = ResourceParser.Parse(main, true, [path], (f, s) => errors++, (f, s) => warnings++);
 				Assert.IsFalse(actual.Any());
 				Assert.IsTrue(0 < errors);
-			};
+			}
 
 			valid("a", "b2");
 			warning("a", "{0}");
@@ -505,6 +501,53 @@ namespace StrongTypeResourceUnitTests {
 			warning("e", "f");
 			error("d", "zxc");
 			error("c", "{1}");
+		}
+
+		[TestMethod]
+		public void FormatStringsTest() {
+			void valid(string name, string value, string? comment) {
+				string file = this.WriteFile(R(R(name, value, comment)));
+				IEnumerable<ResourceItem> actual = ResourceParser.Parse(file, true, [], this.ThrowOnErrorMessage, this.ThrowOnErrorMessage);
+				Assert.AreEqual(1, actual.Count());
+			}
+			void error(string name, string value, string? comment) {
+				string file = this.WriteFile(R(R(name, value, comment)));
+				int errors = 0;
+				void onError(string? file, string message) {
+					this.TestContext.WriteLine($"Error in file {file}: {message}");
+					errors++;
+				}
+				IEnumerable<ResourceItem> actual = ResourceParser.Parse(file, true, [], onError, this.ThrowOnErrorMessage);
+				Assert.IsFalse(actual.Any());
+				Assert.IsTrue(0 < errors);
+			}
+			
+			valid("a", "{0:dd MMMM yyyy}", "{DateTime i}");
+			valid("a", "{0:dd MMMM yyyy}", "{System.DateTime i}");
+			valid("a", "{0:O}", "{DateTimeOffset i}");
+			valid("a", "{0:O}", "{System.DateTimeOffset i}");
+
+			error("a", "{0:k}", "{DateTime i}");
+
+			valid("a", "{0:d}", "{byte i}");
+			valid("a", "{0:d}", "{sbyte i}");
+			valid("a", "{0:d}", "{short i}");
+			valid("a", "{0:d}", "{Int16 i}");
+			valid("a", "{0:d}", "{int i}");
+			valid("a", "{0:d}", "{Int32 i}");
+
+			error("a", "{0:k}", "{int i}");
+
+			valid("a", "{0:d}", "{Guid g}");
+			valid("a", "{0:P}", "{System.Guid g}");
+
+			error("a", "{0:k}", "{Guid i}");
+
+			valid("a", "{0:g}", "{TimeSpan ts}");
+			valid("a", "{0:%m' min.'}", "{TimeSpan ts}");
+
+			error("a", "{0:z}", "{TimeSpan ts}");
+
 		}
 	}
 }
