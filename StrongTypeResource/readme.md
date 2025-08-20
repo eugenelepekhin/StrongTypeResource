@@ -10,7 +10,7 @@ StrongTypeResource is a NuGet package that provides strongly typed access to .NE
 
 - **Strongly Typed Access**: Generates a class with strongly typed properties and methods that provide safe access to your .resx resources
 - **Parameter Validation**: Automatically verify that format parameters match across different culture files
-- **Build-Time Safety**: Catch resource-related errors during compilation instead of runtime
+- **Build-Time Safety**: Catch invalid format specifiers and other resource-related errors during compilation instead of runtime
 
 ## Example
 
@@ -45,9 +45,9 @@ Replace the default Custom Tool for your .resx files with one of these generator
 - `MSBuild:StrongTypeResourcePublic` - Creates a public class (useful for cross-project access and WPF binding)
 
 > If you have been using older versions of StrongTypeResource, you will need to replace old Custom Tool `StrongTypeResource.internal` or `StrongTypeResource.public`
-with `MSBuild:StrongTypeResourceInternal` or `MSBuild:StrongTypeResourcePublic`.
+with `MSBuild:StrongTypeResourceInternal` or `MSBuild:StrongTypeResourcePublic`. You may need to restart Visual Studio after changing the Custom Tool.
 
-The new generator strings allow to generate the wrapper code after you save the .resx file, so you can see changes immediately without rebuilding the project.
+The new generator strings allow to generate the wrapper code after you save the .resx file, so you can see changes in intellisense immediately without rebuilding the project.
 
 #### Option A: Using Visual Studio
 1. Right-click your .resx file
@@ -107,7 +107,7 @@ string FoundItems(int itemCount, double seconds)
 ### Skip Method Generation
 To generate a formatted string as a property instead of a method, add a minus (`-`) at the beginning of the comment:
 ```
--This will be a property, not a method
+-This will be a property, not a method. Format items will not be validated.
 ```
 
 ### Enumeration Strings
@@ -144,7 +144,7 @@ In your project properties, enter `Pseudo` in the **Conditional compilation symb
 ```
 
 ### Legacy Compatibility
-For transitioning from old resource systems to StrongTypeResource,
+For transitioning from old resource generators to StrongTypeResource,
 enable optional parameters to generate warnings instead of errors for formatted strings without proper parameter comments:
 
 ```xml
@@ -159,6 +159,7 @@ This allows you to gradually migrate your resources - formatted strings without 
 ## Automatic Verification
 
 StrongTypeResource automatically verifies that:
+- Format strings are valid for the specified parameter types
 - Format parameters match between main and satellite .resx files
 - All cultures have consistent parameter types and counts
 - Potential runtime errors are caught at build time

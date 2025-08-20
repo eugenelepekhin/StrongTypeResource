@@ -13,8 +13,8 @@
 		<Title>StrongTypeResource</Title>
 		<PackageVersion>$(Version)</PackageVersion>
 		<Authors>Eugene Lepekhin</Authors>
-		<Description>StrongTypeResource is a NuGet package that provides strongly typed access to .NET resources with additional verification of satellite .resx files.</Description>
-		<PackageTags>msbuild;resx;strong type;resource;generator;verification;satellite;culture</PackageTags>
+		<Description>StrongTypeResource is a NuGet package that provides strongly typed access to .NET resources with verification of format specifiers in main and satellite .resx files.</Description>
+		<PackageTags>msbuild;resx;strong;type;resource;generator;verification;validation;satellite;culture;code;analysis;format;formatString;specifier;composite;standard;custom</PackageTags>
 		<PackageReadmeFile>readme.md</PackageReadmeFile>
 		<Title>Strong Type Resource Wrapper Generator</Title>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
