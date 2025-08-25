@@ -173,7 +173,7 @@ namespace StrongTypeResourceUnitTests {
 				errors.Add(message);
 			}
 			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], (f, message) => addError(message), this.ThrowOnErrorMessage);
-			Assert.IsTrue(0 < errors.Count);
+			Assert.IsTrue(0 < errors.Count, "Expecting errors");
 			this.ExpectErrorMessage(expectedError, errors[0]);
 			Assert.IsFalse(actual.Any());
 		}
@@ -412,6 +412,41 @@ namespace StrongTypeResourceUnitTests {
 			//test validation of missing parameter numbers
 			valid("{2}{0}{1}", "{int i, int j, int k}");
 			error("{2}{0}", "string value contains formating placeholders, but the function parameters declaration is missing in the comment");
+		}
+
+		[TestMethod]
+		public void LotOfParametersTest() {
+			void valid(string value, string? comment) {
+				string path = this.WriteFile(R(R("a", value, comment)));
+				int errors = 0;
+				int warnings = 0;
+				IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], (f, s) => errors++, (f, s) => warnings++);
+				Assert.AreEqual(1, actual.Count());
+				Assert.AreEqual(0, errors);
+				Assert.AreEqual(0, warnings);
+			}
+
+			StringBuilder value = new StringBuilder("{0}");
+			StringBuilder comment = new StringBuilder("{int i0");
+			for(int i = 1; i < 123; i++) {
+				value.Append('{').Append(i).Append('}');
+				comment.Append(",int i").Append(i);
+			}
+			comment.Append('}');
+
+			valid(value.ToString(), comment.ToString());
+			value.Replace("{1}", "{10}");
+			this.AssertError("b",
+				value.ToString(),
+				comment.ToString(),
+				"'b' the number of format placeholders in the string doesn't match number of parameters listed in the comment"
+			);
+			comment.Replace("int i1,", "");
+			this.AssertError("c",
+				value.ToString(),
+				comment.ToString(),
+				"'c' format placeholder '{1}' is not used in the format string"
+			);
 		}
 
 		[TestMethod]
