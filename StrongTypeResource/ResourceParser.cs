@@ -244,80 +244,68 @@ namespace StrongTypeResource {
 		[SuppressMessage("Performance", "CA1854:Prefer the 'IDictionary.TryGetValue(TKey, out TValue)' method")]
 		private bool ParseFormatItems(ResourceItem item, string value, Dictionary<int, List<string>?> usedIndexes) {
 			bool invalid() { this.Error(item.Name, "invalid format item in: {0}", value); return false; }
-			int position = 0;
-			int length = value.Length;
-			bool isEos() => length <= position;
-			void next() => position++;
-			int current() {
-				if(isEos()) return -1;
-				return value[position];
-			}
-			void skipWhitespace() {
-				while(!isEos() && char.IsWhiteSpace((char)current())) {
+			int position = -1;
+			int current;
+			int next() => current = ++position < value.Length ? value[position] : -1;
+
+			void skipWhiteSpace() {
+				while(char.IsWhiteSpace((char)current)) {
 					next();
 				}
 			}
-			while(!isEos()) {
-				if(current() == '{') {
-					next();
-					if(!isEos()) {
-						if(current() != '{') { // skip escaped opening braces outside of a format item
-							// Start of a format item
-							int index = 0;
-							bool isNumber = false;
-							while('0' <= current() && current() <= '9') {
+			while(next() != -1) {
+				if(current == '{') {
+					if(next() != '{') { // skip escaped opening braces outside of a format item
+						// Start of a format item
+						int index = 0;
+						bool isNumber = false;
+						while('0' <= current && current <= '9') {
+							isNumber = true;
+							index = index * 10 + (current - '0');
+							if(1_000_000 <= index) return invalid();
+							next();
+						}
+						if(!isNumber) return invalid();
+						if(!usedIndexes.ContainsKey(index)) { // a placeholder may occur more than once, so we don't overwrite the existing one
+							usedIndexes.Add(index, null);
+						}
+						skipWhiteSpace();
+						if(current == ',') {
+							next(); // skip comma
+							// width part of the format item
+							skipWhiteSpace();
+							if(current == '-') next(); // skip sign. note there is no check for + sign in .net parsing
+							isNumber = false;
+							int width = 0;
+							while('0' <= current && current <= '9') {
 								isNumber = true;
-								index = index * 10 + (current() - '0');
-								if(1_000_000 <= index) return invalid();
+								width = width * 10 + (current - '0');
+								if(1_000_000 <= width) return invalid();
 								next();
 							}
 							if(!isNumber) return invalid();
-							if(!usedIndexes.ContainsKey(index)) { // a placeholder may occur more than once, so we don't overwrite the existing one
-								usedIndexes.Add(index, null);
-							}
-							skipWhitespace();
-							if(current() == ',') {
-								next(); // skip comma
-								// width part of the format item
-								skipWhitespace();
-								if(current() == '-') next(); // skip sign. note there is no check for + sign in .net parsing
-								isNumber = false;
-								int width = 0;
-								while('0' <= current() && current() <= '9') {
-									isNumber = true;
-									width = width * 10 + (current() - '0');
-									if(1_000_000 <= width) return invalid();
-									next();
-								}
-								if(!isNumber) return invalid();
-								skipWhitespace();
-							}
-							if(current() == ':') {
-								// format string of the format item. in .net core doesn't allow escaped closing braces. so grab everything until the next closing brace
-								// .net framework allows escaped braces, but this producing ambiguous results, so we don't support it.
-								int start = position + 1;
-								while(!isEos() && current() != '}') {
-									if(current() == '{') return invalid(); // no open braces allowed in format string
-									next();
-								}
-								if(current() != '}' || position == start) return invalid();
-								List<string>? formats = usedIndexes[index];
-								if(formats == null) {
-									formats = new List<string>();
-									usedIndexes[index] = formats;
-								}
-								formats.Add(value.Substring(start, position - start));
-							}
-							if(current() != '}') return invalid();
+							skipWhiteSpace();
 						}
-					} else {
-						return invalid();
+						if(current == ':') {
+							// format string of the format item. in .net core doesn't allow escaped closing braces. so grab everything until the next closing brace
+							// .net framework allows escaped braces, but this producing ambiguous results, so we don't support it.
+							int start = position + 1;
+							while(next() != '}' && current != -1) {
+								if(current == '{') return invalid(); // no open braces allowed in format string
+							}
+							if(current != '}' || position == start) return invalid();
+							List<string>? formats = usedIndexes[index];
+							if(formats == null) {
+								formats = new List<string>();
+								usedIndexes[index] = formats;
+							}
+							formats.Add(value.Substring(start, position - start));
+						}
+						if(current != '}') return invalid();
 					}
-				} else if(current() == '}') {
-					next();
-					if(isEos() || current() != '}') return invalid(); // Allow escaped closing braces outside of a format item, but not a singe ones.
+				} else if(current == '}') {
+					if(next() != '}') return invalid(); // Allow escaped closing braces outside of a format item, but not a singe ones.
 				}
-				next();
 			}
 			return true;
 		}

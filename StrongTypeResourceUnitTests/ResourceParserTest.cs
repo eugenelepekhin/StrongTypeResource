@@ -381,6 +381,8 @@ namespace StrongTypeResourceUnitTests {
 			valid("a{0}b", one);
 			error("{ 0}", error1);
 			error("{a}", error1);
+			error("{0", error1);
+			error("{0 ", error1);
 			error("{1000000}", error1);
 
 			//test validation of alignment
@@ -392,10 +394,14 @@ namespace StrongTypeResourceUnitTests {
 			error("{0,b}", error1);
 			error("{0,1000000}", error1);
 			error("{0,}", error1);
+			error("{0,", error1);
+			error("{0, ", error1);
 
 			//test validation of format string
 			valid("{0:x}", one);
 			error("{0:}", error1);
+			error("{0:", error1);
+			error("{0: ", error1);
 			valid("{0  : C}", one);
 			valid("{0, -10  : G}", one);
 			error("{0: }}{{ }} x}", error1);
