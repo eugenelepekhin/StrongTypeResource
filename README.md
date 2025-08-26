@@ -78,16 +78,18 @@ This prevents conflicts with the new StrongTypeResource-generated code.
 
 ## How Resources Are Generated
 
-### Simple Strings ? Properties
+### Simple Strings - Properties
 Plain strings without formatting become `string` properties:
 ```
 Welcome = Welcome to our application
 ```
 Generates: `string Welcome { get; }`
 
-### Formatted Strings ? Methods
+### Formatted Strings - Methods
 Strings with placeholders become methods with parameters.
 You must specify parameter types in the comment field of the main (neutral language) .resx file - comments in satellite .resx files are ignored.
+If you do not specify parameters, a compile-time error will be generated.
+If you have big .resx file and you want to migrate gradually, see the **Legacy Compatibility** section below.
 
 **Resource Value:**
 ```
@@ -96,7 +98,7 @@ Found {0} items in {1} seconds.
 
 **Comment:**
 ```csharp
-{int itemCount, double seconds}
+{int itemCount, double seconds} The rest of the comment is ignored by the generator, so you can use it for your own notes.
 ```
 
 **Generated Method:**
@@ -111,7 +113,7 @@ To generate a formatted string as a property instead of a method, add a minus (`
 ```
 
 ### Enumeration Strings
-For strings that should be restricted to specific values, add a comment with `!` followed by allowed values:
+For strings that should be restricted to specific values, add a comment with the exclamation mark `!` followed by allowed values:
 ```
 !(Value1, Value2, Value3)
 ```
@@ -160,8 +162,8 @@ This allows you to gradually migrate your resources - formatted strings without 
 
 StrongTypeResource automatically verifies that:
 - Format strings are valid for the specified parameter types
-- Format parameters match between main and satellite .resx files
-- All cultures have consistent parameter types and counts
+- Format items match between main and satellite .resx files
+- All cultures have consistent format items
 - Potential runtime errors are caught at build time
 
-Verification results appear in Visual Studio's Output window during build.
+Verification results appear in Visual Studio's Output and Error List windows during build and in Error List after saving main .resx file..
