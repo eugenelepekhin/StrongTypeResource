@@ -224,7 +224,7 @@ namespace StrongTypeResource {
 		/// <param name="index">Parameter number</param>
 		/// <param name="formatString">format string part of format item</param>
 		/// <returns></returns>
-		public bool IsValidFormatString(int index, string formatString) {
+		public bool IsValidFormatString(int index, string formatString, Parser parser) {
 			if(this.IsFunction && index < this.Parameters!.Count) {
 				string type = this.Parameters[index].Type;
 				switch(type) {
@@ -291,6 +291,16 @@ namespace StrongTypeResource {
 				case "TimeSpan":
 				case "System.TimeSpan":
 					return ResourceItem.ValidateTimeSpan(formatString);
+
+				case "string":
+				case "String":
+				case "System.String":
+					// Any format string is valid for string, however there is no reason to have one, so trigger a warning.
+					parser.Warning(this.Name,
+						$"format specifier ':{formatString}' cannot be applied to string parameter '{this.Parameters[index].Name}'. " +
+						$"Remove ':{formatString}' from the format string in: '{this.Value.Replace("{", "{{").Replace("}", "}}")}'"
+					);
+					return true;
 
 				default:
 					return ResourceItem.ValidateEnum(formatString);

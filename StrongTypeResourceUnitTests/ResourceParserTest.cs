@@ -562,6 +562,17 @@ namespace StrongTypeResourceUnitTests {
 				Assert.IsFalse(actual.Any());
 				Assert.IsTrue(0 < errors);
 			}
+			void warning(string name, string value, string? comment) {
+				string file = this.WriteFile(R(R(name, value, comment)));
+				int warnings = 0;
+				void onWarnign(string? file, string message) {
+					this.TestContext.WriteLine($"Warning in file {file}: {message}");
+					warnings++;
+				}
+				IEnumerable<ResourceItem> actual = ResourceParser.Parse(file, true, [], this.ThrowOnErrorMessage, onWarnign);
+				Assert.AreEqual(1, actual.Count());
+				Assert.IsTrue(0 < warnings);
+			}
 			
 			valid("a", "{0:dd MMMM yyyy}", "{DateTime i}");
 			valid("a", "{0:dd MMMM yyyy}", "{System.DateTime i}");
@@ -594,6 +605,8 @@ namespace StrongTypeResourceUnitTests {
 			valid("a", "{0:x}", "{MyEnum me}");
 
 			error("a", "{0:s}", "{MyEnum me}");
+
+			warning("a", "{0:x}", "{string name}");
 		}
 	}
 }

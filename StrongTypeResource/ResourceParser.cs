@@ -228,7 +228,7 @@ namespace StrongTypeResource {
 								for(int i = 0; i < usedIndexes.Count; i++) {
 									if(!usedIndexes.TryGetValue(i, out List<string>? formats)) {
 										this.Error(item.Name, "format placeholder '{{{0}}}' is not used in the format string", i);
-									} else if(formats != null && !formats.All(f => item.IsValidFormatString(i, f))) {
+									} else if(formats != null && !formats.All(f => item.IsValidFormatString(i, f, this.parser))) {
 										this.Error(item.Name, "format item '{{{0}}}' has invalid format specifier in: {1}", i, value);
 									}
 								}
