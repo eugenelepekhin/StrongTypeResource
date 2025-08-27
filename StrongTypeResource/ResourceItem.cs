@@ -297,8 +297,9 @@ namespace StrongTypeResource {
 				case "System.String":
 					// Any format string is valid for string, however there is no reason to have one, so trigger a warning.
 					parser.Warning(this.Name,
-						$"format specifier ':{formatString}' cannot be applied to string parameter '{this.Parameters[index].Name}'. " +
-						$"Remove ':{formatString}' from the format string in: '{this.Value.Replace("{", "{{").Replace("}", "}}")}'"
+						$"format specifier ':{formatString}' cannot be used with string parameter '{this.Parameters[index].Name}'. " +
+						$"Either remove ':{formatString}' from the format string in: '{this.Value.Replace("{", "{{").Replace("}", "}}")}' " +
+						$"or update type of '{this.Parameters[index].Name}' in the comment of the main .resx file."
 					);
 					return true;
 
