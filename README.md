@@ -83,7 +83,10 @@ Plain strings without formatting become `string` properties:
 ```
 Welcome = Welcome to our application
 ```
-Generates: `string Welcome { get; }`
+Generates:
+```csharp
+string Welcome { get; }
+```
 
 ### Formatted Strings - Methods
 Strings with placeholders become methods with parameters.
@@ -97,7 +100,7 @@ Found {0} items in {1} seconds.
 ```
 
 **Comment:**
-```csharp
+```
 {int itemCount, double seconds} The rest of the comment is ignored by the generator, so you can use it for your own notes.
 ```
 
