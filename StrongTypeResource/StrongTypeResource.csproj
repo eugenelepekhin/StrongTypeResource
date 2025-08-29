@@ -25,7 +25,7 @@
 		<BuildOutputTargetFolder>tasks</BuildOutputTargetFolder>
 		<NoWarn>$(NoWarn);NU5100;NU5128</NoWarn>
 
-		<PackageReleaseNotes>Better error messages.</PackageReleaseNotes>
+		<PackageReleaseNotes>Better error messages and error detection.</PackageReleaseNotes>
 		
 	</PropertyGroup>
 

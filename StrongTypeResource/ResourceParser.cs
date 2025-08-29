@@ -258,15 +258,13 @@ namespace StrongTypeResource {
 					if(next() != '{') { // skip escaped opening braces outside of a format item
 						// Start of a format item
 						int index = 0;
-						bool isNumber = false;
+						int start = position;
 						while('0' <= current && current <= '9') {
-							isNumber = true;
-							index = index * 10 + (current - '0');
-							if(1_000_000 <= index) return invalid();
+							index = index * 10 + current - '0';
 							next();
 						}
-						if(!isNumber) return invalid();
-						if(!usedIndexes.ContainsKey(index)) { // a placeholder may occur more than once, so we don't overwrite the existing one
+						if((position - start) is not (> 0 and < 7)) return invalid(); // index must be 1-6 digits long
+						if(!usedIndexes.ContainsKey(index)) { // a placeholder with same index may occur more than once, so we don't overwrite the existing one
 							usedIndexes.Add(index, null);
 						}
 						skipWhiteSpace();
@@ -275,21 +273,17 @@ namespace StrongTypeResource {
 							// width part of the format item
 							skipWhiteSpace();
 							if(current == '-') next(); // skip sign. note there is no check for + sign in .net parsing
-							isNumber = false;
-							int width = 0;
+							start = position;
 							while('0' <= current && current <= '9') {
-								isNumber = true;
-								width = width * 10 + (current - '0');
-								if(1_000_000 <= width) return invalid();
 								next();
 							}
-							if(!isNumber) return invalid();
+							if((position - start) is not (> 0 and < 7)) return invalid(); // width must be 1-6 digits long
 							skipWhiteSpace();
 						}
 						if(current == ':') {
 							// format string of the format item. in .net core doesn't allow escaped closing braces. so grab everything until the next closing brace
 							// .net framework allows escaped braces, but this producing ambiguous results, so we don't support it.
-							int start = position + 1;
+							start = position + 1;
 							while(next() != '}' && current != -1) {
 								if(current == '{') return invalid(); // no open braces allowed in format string
 							}
