@@ -226,14 +226,11 @@ namespace StrongTypeResourceUnitTests {
 				R("g", "h", "i"),
 				R("j", "k{0}l{1}", "{int i, int j}"),
 				R("m", "n{0}o{1}", "{int i, int j}"),
-				R("p", "q{0}r{1}", "{int i, int j}")
+				R("p", "q{0}r{1}", "{int i, int j}"),
+				R("r", "r{0:d}p{1}", "{int? i, int j}")
 			));
-			int errors = 0;
-			int warnings = 0;
-			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], (f, s) => errors++, (f, s) => warnings++);
-			Assert.AreEqual(6, actual.Count());
-			Assert.AreEqual(0, errors);
-			Assert.AreEqual(0, warnings);
+			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], this.ThrowOnErrorMessage, this.ThrowOnErrorMessage);
+			Assert.AreEqual(7, actual.Count());
 		}
 
 		[TestMethod]
@@ -580,6 +577,7 @@ namespace StrongTypeResourceUnitTests {
 			valid("a", "{0:O}", "{System.DateTimeOffset i}");
 
 			error("a", "{0:k}", "{DateTime i}");
+			error("a", "{0:k}", "{DateTime? i}");
 
 			valid("a", "{0:d}", "{byte i}");
 			valid("a", "{0:d}", "{sbyte i}");
@@ -591,22 +589,32 @@ namespace StrongTypeResourceUnitTests {
 
 			error("a", "{0:k}", "{int i}");
 			error("a", "{0:d} {0:k} {0:f}", "{Int16 i}");
+			error("a", "{0:k}", "{int? i}");
+			error("a", "{0:d} {0:k} {0:f}", "{Int16? i}");
 
 			valid("a", "{0:d}", "{Guid g}");
 			valid("a", "{0:P}", "{System.Guid g}");
 
 			error("a", "{0:k}", "{Guid i}");
+			error("a", "{0:k}", "{Guid? i}");
 
 			valid("a", "{0:g}", "{TimeSpan ts}");
 			valid("a", "{0:%m' min.'}", "{TimeSpan ts}");
 
 			error("a", "{0:z}", "{TimeSpan ts}");
+			error("a", "{0:z}", "{TimeSpan? ts}");
 
 			valid("a", "{0:x}", "{MyEnum me}");
 
 			error("a", "{0:s}", "{MyEnum me}");
+			error("a", "{0:s}", "{MyEnum? me}");
 
 			warning("a", "{0:x}", "{string name}");
+			warning("a", "{0:x}", "{string? name}");
+
+			valid("a", "{0:x}", "{int? i}");
+			error("a", "{0:s}", "{int? i}");
+			error("a", "{0:x}", "{int?? i}");
 		}
 	}
 }

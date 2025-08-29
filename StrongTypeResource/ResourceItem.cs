@@ -17,7 +17,7 @@ namespace StrongTypeResource {
 			// {int index, string message} hello, world {System.Int32 param} comment {} {MyType value1, Other value2, OneMore last}
 			private readonly Regex parameterList = new Regex(@"^\s*\{(?<param>[^}]+)\}", regexOptions);
 			// a.b.c.d a, int i, string text, System.Int32 index
-			private readonly Regex parameterDeclaration = new Regex(@"^(?<type>[A-Za-z_][A-Za-z_0-9]*(\s*\.\s*[A-Za-z_][A-Za-z_0-9]*)*)\s+(?<name>[A-Za-z_][A-Za-z_0-9]*)$", regexOptions);
+			private readonly Regex parameterDeclaration = new Regex(@"^(?<type>[A-Za-z_][A-Za-z_0-9]*(\s*\.\s*[A-Za-z_][A-Za-z_0-9]*)*(\??))\s+(?<name>[A-Za-z_][A-Za-z_0-9]*)$", regexOptions);
 
 			/// <summary>
 			/// Gets the delegate that reports error messages by providing the name of the resource and a descriptive message.
@@ -226,7 +226,7 @@ namespace StrongTypeResource {
 		/// <returns></returns>
 		public bool IsValidFormatString(int index, string formatString, Parser parser) {
 			if(this.IsFunction && index < this.Parameters!.Count) {
-				string type = this.Parameters[index].Type;
+				string type = this.Parameters[index].Type.TrimEnd('?');
 				switch(type) {
 				case "DateTime":
 				case "System.DateTime":
