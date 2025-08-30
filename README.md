@@ -121,6 +121,19 @@ string FoundItems(int itemCount, double seconds)
 #### Parameter Type Rules
 You must provide parameter types and names as you want them to appear in the generated method signature in curly braces.
 Each format item index should have it's own parameter definition.
+You can use any valid C# type, including nullable types and custom types, except generics.
+If you have a generic type, consider passing it converted to string.
+
+**Examples:**
+- `int count`
+- `string name`
+- `double? distance`
+- `DateTime loginTime`
+- `MyCustomEnum ? status`
+
+**Not supported:**
+- `List<string> items`
+- `Dictionary<int, List<string>> map`
 
 #### Complex Formatting Examples
 ```
