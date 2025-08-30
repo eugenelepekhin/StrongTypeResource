@@ -1,6 +1,4 @@
-﻿using System.Text.RegularExpressions;
-
-namespace StrongTypeResourceTest {
+﻿namespace StrongTypeResourceTest {
 	internal static class Program {
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2241:Provide correct arguments to formatting methods", Justification = "<Pending>")]
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1303:Do not pass literals as localized parameters", Justification = "<Pending>")]

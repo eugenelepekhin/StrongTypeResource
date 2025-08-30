@@ -18,6 +18,9 @@ namespace StrongTypeResource {
 			private readonly Regex parameterList = new Regex(@"^\s*\{(?<param>[^}]+)\}", regexOptions);
 			// a.b.c.d a, int i, string text, System.Int32 index, MyType? value
 			private readonly Regex parameterDeclaration = new Regex(@"^(?<type>[A-Za-z_][A-Za-z_0-9]*(\s*\.\s*[A-Za-z_][A-Za-z_0-9]*)*\s*(\??))\s+(?<name>[A-Za-z_][A-Za-z_0-9]*)$", regexOptions);
+			// any space characters
+			private readonly Regex space = new Regex(@"\s+", regexOptions);
+
 
 			/// <summary>
 			/// Gets the delegate that reports error messages by providing the name of the resource and a descriptive message.
@@ -74,7 +77,7 @@ namespace StrongTypeResource {
 					foreach(string text in list) {
 						Match parameterMatch = this.parameterDeclaration.Match(text.Trim());
 						if(parameterMatch.Success) {
-							parameterList.Add(new Parameter(parameterMatch.Groups["type"].Value.Trim(), parameterMatch.Groups["name"].Value.Trim()));
+							parameterList.Add(new Parameter(this.space.Replace(parameterMatch.Groups["type"].Value, string.Empty), parameterMatch.Groups["name"].Value.Trim()));
 						} else {
 							this.Error(name, $"bad parameter declaration: {text.Trim()}");
 							return false; // Invalid parameter declaration

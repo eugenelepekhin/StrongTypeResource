@@ -651,8 +651,18 @@ namespace StrongTypeResourceUnitTests {
 			valid("a", "{0:d}", "{int i}");
 			valid("b", "{0:d}", "{int? i}");
 			valid("c", "{0:d}", "{int\t? i}");
+			valid("d", "0:d", " {} ");
+			valid("e", "{0:d}", "  { System . Int64\t? \ti\t } hello, world");
+			error("f", "{0:z}", "	{  System . Int64\t? i} ignore me");
 
-			error("d", "{0}", "{Dictionary<int, List<string[]>> i}");
+			error("g", "{0}", "{Dictionary<int, List<string[]>> i}");
+
+			valid("h", "{0:d}", "  { System . Numeric \n . BigInt\t? \ti\t } hello, world");
+			error("i", "{0:z}", "  { System . Numeric \n . BigInt\t? \ti\t } hello, world");
+			error("j", "{0:z}", "  { Numeric \n . BigInt\t? \ti\t } hello, world");
+			error("k", "{0:z}", "  { \n  BigInt\n? \ti\t } hello, world");
+
+			error("l", "{0:d}", "{int hello world} hello, world");
 		}
 	}
 }
