@@ -573,48 +573,86 @@ namespace StrongTypeResourceUnitTests {
 			
 			valid("a", "{0:dd MMMM yyyy}", "{DateTime i}");
 			valid("a", "{0:dd MMMM yyyy}", "{System.DateTime i}");
+			valid("a", "{0:dd MMMM yyyy}", "{System.DateTime ? i}");
 			valid("a", "{0:O}", "{DateTimeOffset i}");
 			valid("a", "{0:O}", "{System.DateTimeOffset i}");
+			valid("a", "{0:O}", "{System.DateTimeOffset? i}");
+			valid("a", "{0:O}", "{System.DateTimeOffset  \t ? i}");
 
 			error("a", "{0:k}", "{DateTime i}");
 			error("a", "{0:k}", "{DateTime? i}");
+			error("a", "{0:k}", "{DateTime  ? i}");
 
 			valid("a", "{0:d}", "{byte i}");
 			valid("a", "{0:d}", "{sbyte i}");
 			valid("a", "{0:d}", "{short i}");
 			valid("a", "{0:d}", "{Int16 i}");
 			valid("a", "{0:d}", "{int i}");
+			valid("a", "{0:d}", "{int? i}");
 			valid("a", "{0:d}", "{Int32 i}");
+			valid("a", "{0:d}", "{Int32 ? i}");
 			valid("a", "{0:d} {0:g} {0:f}", "{Int16 i}");
+			valid("a", "{0:d} {0:g} {0:f}", "{Int16? i}");
 
 			error("a", "{0:k}", "{int i}");
 			error("a", "{0:d} {0:k} {0:f}", "{Int16 i}");
 			error("a", "{0:k}", "{int? i}");
 			error("a", "{0:d} {0:k} {0:f}", "{Int16? i}");
+			error("a", "{0:d} {0:k} {0:f}", "{Int16 ? i}");
 
 			valid("a", "{0:d}", "{Guid g}");
 			valid("a", "{0:P}", "{System.Guid g}");
+			valid("a", "{0:P}", "{System.Guid? g}");
 
 			error("a", "{0:k}", "{Guid i}");
 			error("a", "{0:k}", "{Guid? i}");
 
 			valid("a", "{0:g}", "{TimeSpan ts}");
 			valid("a", "{0:%m' min.'}", "{TimeSpan ts}");
+			valid("a", "{0:%m' min.'}", "{TimeSpan ? ts}");
 
 			error("a", "{0:z}", "{TimeSpan ts}");
 			error("a", "{0:z}", "{TimeSpan? ts}");
+			error("a", "{0:z}", "{TimeSpan ? ts}");
 
 			valid("a", "{0:x}", "{MyEnum me}");
+			valid("a", "{0:x}", "{MyEnum? me}");
 
 			error("a", "{0:s}", "{MyEnum me}");
 			error("a", "{0:s}", "{MyEnum? me}");
+			error("a", "{0:s}", "{MyEnum ? me}");
 
 			warning("a", "{0:x}", "{string name}");
 			warning("a", "{0:x}", "{string? name}");
 
 			valid("a", "{0:x}", "{int? i}");
 			error("a", "{0:s}", "{int? i}");
-			error("a", "{0:x}", "{int?? i}");
+		}
+
+		[TestMethod]
+		public void ParameterParsingTest() {
+			void valid(string name, string value, string? comment) {
+				string file = this.WriteFile(R(R(name, value, comment)));
+				IEnumerable<ResourceItem> actual = ResourceParser.Parse(file, true, [], this.ThrowOnErrorMessage, this.ThrowOnErrorMessage);
+				Assert.AreEqual(1, actual.Count());
+			}
+			void error(string name, string value, string? comment) {
+				string file = this.WriteFile(R(R(name, value, comment)));
+				int errors = 0;
+				void onError(string? file, string message) {
+					this.TestContext.WriteLine($"Error in file {file}: {message}");
+					errors++;
+				}
+				IEnumerable<ResourceItem> actual = ResourceParser.Parse(file, true, [], onError, this.ThrowOnErrorMessage);
+				Assert.IsFalse(actual.Any());
+				Assert.IsTrue(0 < errors);
+			}
+
+			valid("a", "{0:d}", "{int i}");
+			valid("b", "{0:d}", "{int? i}");
+			valid("c", "{0:d}", "{int\t? i}");
+
+			error("d", "{0}", "{Dictionary<int, List<string[]>> i}");
 		}
 	}
 }
