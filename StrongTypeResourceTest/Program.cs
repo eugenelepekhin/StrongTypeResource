@@ -9,6 +9,12 @@
 			string s = NewResx.Resources.String1;
 			Console.WriteLine(NewResx.Resources.String1);
 			//Console.WriteLine("{ 0: d \n }", 42); // this will throw in .net parsing and bring source code.
+
+			string s2 = Ресурсы.Тексты.Привет;
+			Console.WriteLine(s2);
+
+			string s3 = Ресурсы.Тексты.Найдено(3, 2.7);
+			Console.WriteLine(s3);
 		}
 	}
 }

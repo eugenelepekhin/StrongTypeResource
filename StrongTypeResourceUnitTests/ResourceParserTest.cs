@@ -631,10 +631,18 @@ namespace StrongTypeResourceUnitTests {
 
 		[TestMethod]
 		public void ParameterParsingTest() {
+			Regex space = new Regex(@"\s", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Singleline);
 			void valid(string name, string value, string? comment) {
 				string file = this.WriteFile(R(R(name, value, comment)));
 				IEnumerable<ResourceItem> actual = ResourceParser.Parse(file, true, [], this.ThrowOnErrorMessage, this.ThrowOnErrorMessage);
 				Assert.AreEqual(1, actual.Count());
+				ResourceItem item = actual.First();
+				if(item != null && item.Parameters != null) {
+					foreach(Parameter parameter in item.Parameters) {
+						Assert.IsFalse(space.IsMatch(parameter.Type));
+						Assert.IsFalse(space.IsMatch(parameter.Name));
+					}
+				}
 			}
 			void error(string name, string value, string? comment) {
 				string file = this.WriteFile(R(R(name, value, comment)));
@@ -648,8 +656,8 @@ namespace StrongTypeResourceUnitTests {
 				Assert.IsTrue(0 < errors);
 			}
 
-			valid("a", "{0:d}", "{int i}");
-			valid("b", "{0:d}", "{int? i}");
+			valid("a", "{0:d}", " { int i} ");
+			valid("b", "{0:d}", " {int? i}  ");
 			valid("c", "{0:d}", "{int\t? i}");
 			valid("d", "0:d", " {} ");
 			valid("e", "{0:d}", "  { System . Int64\t? \ti\t } hello, world");
@@ -663,6 +671,9 @@ namespace StrongTypeResourceUnitTests {
 			error("k", "{0:z}", "  { \n  BigInt\n? \ti\t } hello, world");
 
 			error("l", "{0:d}", "{int hello world} hello, world");
+
+			valid("Строка1", "{0}", "  { Привет привет } hello, world");
+			valid("Строка2", "{0}", "  { Привет ? привет } hello, world");
 		}
 	}
 }

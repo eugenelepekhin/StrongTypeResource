@@ -34,6 +34,9 @@
 		<EmbeddedResource Update="Resources\Text.resx">
 			<Generator>MSBuild:StrongTypeResourceInternal</Generator>
 		</EmbeddedResource>
+		<EmbeddedResource Update="Ресурсы\Тексты.resx">
+		  <Generator>MSBuild:StrongTypeResourcePublic</Generator>
+		</EmbeddedResource>
 	</ItemGroup>
 
 </Project>
