@@ -234,36 +234,30 @@ namespace StrongTypeResourceUnitTests {
 		}
 
 		[TestMethod]
-		public void Variants1Test() {
-			string path = this.WriteFile(R(
-				R("a", "d", "!(c, d, e)")
-			));
-			int errors = 0;
-			int warnings = 0;
-			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], (f, s) => errors++, (f, s) => warnings++);
-			Assert.AreEqual(1, actual.Count());
-			Assert.AreEqual(0, errors);
-			Assert.AreEqual(0, warnings);
-			ResourceItem item = actual.First();
-			CollectionAssert.AreEqual(item.LocalizationVariants!.ToArray(), new string[] {"c", "d", "e"});
+		public void VariantsTest() {
+			void valid(string name, string value, string? comment, params string[] variants) {
+				string file = this.WriteFile(R(R(name, value, comment)));
+				IEnumerable<ResourceItem> actual = ResourceParser.Parse(file, true, [], this.ThrowOnErrorMessage, this.ThrowOnErrorMessage);
+				Assert.AreEqual(1, actual.Count());
+				ResourceItem item = actual.First();
+				Assert.IsNotNull(item.LocalizationVariants, "LocalizationVariants is null");
+				if(0 < variants.Length) {
+					CollectionAssert.AreEqual(variants, item.LocalizationVariants!.ToArray(), $"LocalizationVariants: {string.Join(", ", item.LocalizationVariants)}, expecting: {string.Join(", ", variants)}");
+				} else {
+					Assert.AreEqual(0, item.LocalizationVariants!.Count);
+				}
+			}
+
+			valid("a", "d", "!(c, d, e)", "c", "d", "e");
+			valid("a", "{0}", "!(c, {0}, e)", "c", "{0}", "e");
+			valid("a", "d", "!( c  ,   d  ,  e  )", "c", "d", "e");
+
+			valid("b", "d", "!(c, d, e), f)", "c", "d", "e");
+			valid("b", "d", "!(c, d, e), (f)", "c", "d", "e");
+			valid("b", "d", "!(c, d, (e)", "c", "d", "(e");
 		}
 
-		[TestMethod]
-		public void Variants2Test() {
-			string path = this.WriteFile(R(
-				R("a", "{0}", "!(c, {0}, e)")
-			));
-			int errors = 0;
-			int warnings = 0;
-			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], (f, s) => errors++, (f, s) => warnings++);
-			Assert.AreEqual(1, actual.Count());
-			Assert.AreEqual(0, errors);
-			Assert.AreEqual(0, warnings);
-			ResourceItem item = actual.First();
-			CollectionAssert.AreEqual(item.LocalizationVariants!.ToArray(), new string[] { "c", "{0}", "e" });
-		}
-
-		[TestMethod]
+			[TestMethod]
 		public void IgnoreParameters1Test() {
 			string path = this.WriteFile(R(
 				R("a", "{0}", "-{int i}")

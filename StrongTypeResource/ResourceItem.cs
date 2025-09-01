@@ -13,7 +13,7 @@ namespace StrongTypeResource {
 			// - suppress validation of item
 			private readonly Regex suppressValidation = new Regex(@"^\s*-", regexOptions);
 			// !(hello, world)
-			private readonly Regex variantList = new Regex(@"^\s*!\((?<list>.*)\)", regexOptions);
+			private readonly Regex variantList = new Regex(@"^\s*!\((?<list>.*?)\)", regexOptions);
 			// {int index, string message} hello, world {System.Int32 param} comment {} {MyType value1, Other value2, OneMore last}
 			private readonly Regex parameterList = new Regex(@"^\s*\{(?<param>[^}]+)\}", regexOptions);
 			// a.b.c.d a, int i, string text, System.Int32 index, MyType? value
@@ -229,7 +229,7 @@ namespace StrongTypeResource {
 		/// <returns></returns>
 		public bool IsValidFormatString(int index, string formatString, Parser parser) {
 			if(this.IsFunction && index < this.Parameters!.Count) {
-				string type = this.Parameters[index].Type.TrimEnd('?').Trim();
+				string type = this.Parameters[index].Type.TrimEnd('?');
 				switch(type) {
 				case "DateTime":
 				case "System.DateTime":
