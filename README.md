@@ -208,13 +208,13 @@ Generates longer, non-Latin character strings for UI testing while keeping them 
 **Example transformations:**
 ```
 Original: "Save"
-Pseudo:   "?àvë"
+Pseudo:   "ÅÃ vÃ«"
 
 Original: "Delete Item"  
-Pseudo:   "Ğëlëtë Ïtëm"
+Pseudo:   "ÃÃ«lÃ«tÃ« ÃtÃ«m"
 
 Original: "Welcome to our application"
-Pseudo:   "Wëlçömë tö öür àpplïçàtïön"
+Pseudo:   "WÃ«lÃ§Ã¶mÃ« tÃ¶ Ã¶Ã¼r Ã pplÃ¯Ã§Ã tÃ¯Ã¶n"
 ```
 
 **Enable pseudo resources:**
