@@ -133,6 +133,7 @@ If you have a generic type or array, consider passing it converted to string.
 **Not supported:**
 - `List<string> items`
 - `Dictionary<int, List<string>> map`
+- `string[] values`
 
 #### Complex Formatting Examples
 ```
@@ -253,13 +254,13 @@ Verification results appear in Visual Studio's Output and Error List windows dur
 
 ### Common Issues
 
-**Problem**: "Custom Tool 'MSBuild:StrongTypeResourceInternal' failed"
+**Problem**: "Custom Tool 'MSBuild:StrongTypeResourceInternal' build failed"  
 **Solution**: 
 - Ensure you've deleted the original `.Designer.cs` file
 - Check that parameter comments follow the correct syntax: `{type name, type name}`
 - Restart Visual Studio after changing Custom Tool settings
 
-**Problem**: Generated class not found or IntelliSense not working
+**Problem**: Generated class not found or IntelliSense not working  
 **Solution**:
 - Rebuild the project
 - Check that the .resx file's **Build Action** is set to "Embedded Resource"

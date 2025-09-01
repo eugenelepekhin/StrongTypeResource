@@ -25,7 +25,10 @@
 		<BuildOutputTargetFolder>tasks</BuildOutputTargetFolder>
 		<NoWarn>$(NoWarn);NU5100;NU5128</NoWarn>
 
-		<PackageReleaseNotes>Better error messages and error detection.</PackageReleaseNotes>
+		<PackageReleaseNotes>
+			Better error messages and error detection.
+			Adding support for Unicode identifiers.
+		</PackageReleaseNotes>
 		
 	</PropertyGroup>
 
