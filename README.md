@@ -18,8 +18,9 @@ StrongTypeResource provides strongly typed access to .NET resources with verific
 
 1. **Install**: Add the StrongTypeResource NuGet package to your project
 2. **Configure**: Change your .resx file's Custom Tool to `MSBuild:StrongTypeResourceInternal` or `MSBuild:StrongTypeResourcePublic`
-3. **Annotate**: Add parameter declaration to comments of resources with format items: `{int count, double time}`
-4. **Use**: Access resources with compile-time safety: `Resources.ItemsFound(count, time)`
+3. **Clean up**: Delete the original generated `.Designer.cs` file to avoid conflicts
+4. **Annotate**: Add parameter declaration to comments of resources with format items: `{int count, double time}`
+5. **Use**: Access resources with compile-time safety: `Resources.ItemsFound(count, time)`
 
 ## Example
 
