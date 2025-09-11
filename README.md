@@ -189,6 +189,13 @@ This ensures the string in the main resource file or any satellite files matches
 // Both must be in the allowed list: !(Active, Inactive, Pending, Actif, Inactif, En attente)
 ```
 
+## Controlling Culture
+The generated class includes a `Culture` property that allows you to get or set the culture used for resource lookup.
+If you don't explicitly set this property, the current thread's `CurrentUICulture` is used by default.
+
+For formatted strings, a separate `FormatCulture` property controls the culture used during actual string formatting operations.
+If this property is not set, the system defaults to using the current thread's `CurrentUICulture` for formatting.
+
 ## Special Features
 
 ### WPF Support
@@ -229,6 +236,8 @@ In your project properties, enter `Pseudo` in the **Conditional compilation symb
   <DefineConstants>$(DefineConstants);Pseudo</DefineConstants>
 </PropertyGroup>
 ```
+
+The pseudo resource generation is only active if `Culture` property is set to null.
 
 ### Legacy Compatibility
 For transitioning from old resource generators to StrongTypeResource, enable optional parameters to generate warnings instead of errors for formatted strings without proper parameter comments:

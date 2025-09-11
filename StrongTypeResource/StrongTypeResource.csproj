@@ -5,7 +5,7 @@
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
 		<PlatformTarget>AnyCPU</PlatformTarget>
-		<Version>1.1.4</Version>
+		<Version>1.1.6</Version>
 		<AnalysisLevel>latest-all</AnalysisLevel>
 
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -14,7 +14,7 @@
 		<PackageVersion>$(Version)</PackageVersion>
 		<Authors>Eugene Lepekhin</Authors>
 		<Description>StrongTypeResource is a NuGet package that provides strongly typed access to .NET resources with verification of format specifiers in main and satellite .resx files.</Description>
-		<PackageTags>msbuild;resx;strong;type;resource;generator;verification;validation;satellite;culture;code;analysis;format;formatString;specifier;composite;standard;custom</PackageTags>
+		<PackageTags>msbuild;resx;.resx;strong;type;resource;method;property;generator;verification;validation;satellite;culture;code;analysis;format;string;formatString;specifier;composite;standard;custom;localization;globalization</PackageTags>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<Title>Strong Type Resource Wrapper Generator</Title>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -25,10 +25,7 @@
 		<BuildOutputTargetFolder>tasks</BuildOutputTargetFolder>
 		<NoWarn>$(NoWarn);NU5100;NU5128</NoWarn>
 
-		<PackageReleaseNotes>
-			Better error messages and error detection.
-			Adding support for Unicode identifiers.
-		</PackageReleaseNotes>
+		<PackageReleaseNotes>Improving documentation.</PackageReleaseNotes>
 		
 	</PropertyGroup>
 
