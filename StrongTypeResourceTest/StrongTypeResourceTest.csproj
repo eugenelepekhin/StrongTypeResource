@@ -15,6 +15,7 @@
 	  <EmbeddedResource Include="..\StrongTypeResourceUnitTests\Resources\Texts.resx" Link="NewResx\Texts.resx">
 	    <Generator>MSBuild:StrongTypeResourcePublic</Generator>
 	  </EmbeddedResource>
+	  <EmbeddedResource Include="..\StrongTypeResourceUnitTests\Resources\Texts.ru.resx" Link="NewResx\Texts.ru.resx" />
 	</ItemGroup>
 
 	<ItemGroup>

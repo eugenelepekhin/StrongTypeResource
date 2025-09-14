@@ -111,8 +111,6 @@ namespace StrongTypeResource {
 				this.satellites.Add(path);
 			}
 
-			public bool IsMainResource(string path) => StringComparer.OrdinalIgnoreCase.Equals(this.ResxPath, path);
-
 			#if DEBUG
 				public override string ToString() {
 					return
@@ -198,6 +196,16 @@ namespace StrongTypeResource {
 					}
 				}
 			}
+			static string LinkPath(ITaskItem item) {
+				string linkPath = item.GetMetadata("Link").Trim();
+				if(string.IsNullOrEmpty(linkPath)) {
+					linkPath = item.ItemSpec.Trim();
+					while(linkPath.StartsWith(@"..\", StringComparison.Ordinal)) {
+						linkPath = linkPath.Substring(3);
+					}
+				}
+				return linkPath;
+			}
 
 			List<ResourceGroup> groups = new List<ResourceGroup>();
 			List<ITaskItem> others = new List<ITaskItem>();
@@ -209,13 +217,7 @@ namespace StrongTypeResource {
 				bool isInternal = generatorIs("MSBuild:StrongTypeResourceInternal") || generatorIs("StrongTypeResource.internal");
 				if(isPublic || isInternal) {
 					string resourcePath = item.ItemSpec.Trim();
-					string linkPath = item.GetMetadata("Link").Trim();
-					if(string.IsNullOrEmpty(linkPath)) {
-						linkPath = resourcePath;
-						while(linkPath.StartsWith(@"..\", StringComparison.Ordinal)) {
-							linkPath = linkPath.Substring(3);
-						}
-					}
+					string linkPath = LinkPath(item);
 					string resourceRoot = Path.GetDirectoryName(linkPath) ?? string.Empty;
 					string resourceFile = Path.GetFileNameWithoutExtension(linkPath);
 					if(Path.HasExtension(resourceFile)) {
@@ -257,8 +259,9 @@ namespace StrongTypeResource {
 				string groupPath = Path.ChangeExtension(Path.ChangeExtension(group.ItemSpec, null), null); // remove .resx extension and if culture extension exists remove it too.
 				Regex regex = new Regex(Regex.Escape(groupPath) + @"\.[a-zA-Z\-01]{2,20}\.resx", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 				foreach(ITaskItem satellite in others) {
-					string path = satellite.ItemSpec;
-					if(regex.IsMatch(path) && !group.IsMainResource(path)) {
+					string path = satellite.ItemSpec.Trim();
+					string linkPah = LinkPath(satellite);
+					if(regex.IsMatch(linkPah)) {
 						group.AddSatellite(Path.Combine(this.ProjectDirectory,  path));
 					}
 				}

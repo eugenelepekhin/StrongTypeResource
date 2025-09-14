@@ -17,6 +17,7 @@
     <EmbeddedResource Remove="Resources\NoName.resx" />
     <EmbeddedResource Remove="Resources\SpacePreserve.resx" />
     <EmbeddedResource Remove="Resources\Texts.resx" />
+    <EmbeddedResource Remove="Resources\Texts.ru.resx" />
     <EmbeddedResource Remove="Resources\TypeDuplicated.resx" />
     <EmbeddedResource Remove="Resources\UnexpectedNode.resx" />
     <EmbeddedResource Remove="Resources\ValueDuplicated.resx" />
@@ -34,6 +35,10 @@
     <None Include="Resources\SpacePreserve.resx">
       <Generator></Generator>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Resources\Texts.ru.resx">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <Generator></Generator>
     </None>
     <None Include="Resources\Texts.resx">
       <Generator></Generator>
