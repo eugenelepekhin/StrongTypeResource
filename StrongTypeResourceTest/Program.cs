@@ -15,6 +15,9 @@
 
 			string s3 = Ресурсы.Тексты.Найдено(3, 2.7);
 			Console.WriteLine(s3);
+
+			string s4 = NewResx.Texts.String1;
+			Console.WriteLine(s4);
 		}
 	}
 }

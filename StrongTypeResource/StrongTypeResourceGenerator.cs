@@ -112,6 +112,21 @@ namespace StrongTypeResource {
 			}
 
 			public bool IsMainResource(string path) => StringComparer.OrdinalIgnoreCase.Equals(this.ResxPath, path);
+
+			#if DEBUG
+				public override string ToString() {
+					return
+						$"ItemSpec: {this.ItemSpec},\n" +
+						$"ResxPath: {this.ResxPath},\n" +
+						$"CodePath: {this.CodePath},\n" +
+						$"Name: {this.Name},\n" +
+						$"Namespace: {this.Namespace},\n" +
+						$"ClassName: {this.ClassName},\n" +
+						$"IsPublic: {this.IsPublic},\n" +
+						$"Satellites: [{string.Join(", ", this.Satellites)}]"
+					;
+				}
+			#endif
 		}
 
 		[SuppressMessage("Design", "CA1031:Do not catch general exception types")]
@@ -193,15 +208,22 @@ namespace StrongTypeResource {
 				bool isPublic = generatorIs("MSBuild:StrongTypeResourcePublic") || generatorIs("StrongTypeResource.public");
 				bool isInternal = generatorIs("MSBuild:StrongTypeResourceInternal") || generatorIs("StrongTypeResource.internal");
 				if(isPublic || isInternal) {
-					string resourcePath = item.ItemSpec;
-					string resourceRoot = Path.GetDirectoryName(resourcePath) ?? string.Empty;
-					string resourceFile = Path.GetFileNameWithoutExtension(resourcePath);
+					string resourcePath = item.ItemSpec.Trim();
+					string linkPath = item.GetMetadata("Link").Trim();
+					if(string.IsNullOrEmpty(linkPath)) {
+						linkPath = resourcePath;
+						while(linkPath.StartsWith(@"..\", StringComparison.Ordinal)) {
+							linkPath = linkPath.Substring(3);
+						}
+					}
+					string resourceRoot = Path.GetDirectoryName(linkPath) ?? string.Empty;
+					string resourceFile = Path.GetFileNameWithoutExtension(linkPath);
 					if(Path.HasExtension(resourceFile)) {
-						warningMessage(Path.Combine(this.ProjectDirectory, resourcePath),
+						warningMessage(Path.Combine(this.ProjectDirectory, linkPath),
 							string.Format(
 								CultureInfo.InvariantCulture,
 								"StrongTypeResourceGenerator: The main resource file '{0}' has culture extension in its name. The main resource files should not have any culture extensions and be the assembly neutral culture.",
-								Path.GetFileName(resourcePath)
+								Path.GetFileName(linkPath)
 							)
 						);
 					}
@@ -217,9 +239,9 @@ namespace StrongTypeResource {
 						;
 					}
 					ResourceGroup group = new ResourceGroup(
-						itemSpec: resourcePath,
+						itemSpec: linkPath,
 						resxPath: Path.Combine(this.ProjectDirectory,  resourcePath),
-						codePath: Path.Combine(this.CodeOutputPath, resourcePath + ".cs"),
+						codePath: Path.Combine(this.CodeOutputPath, linkPath + ".cs"),
 						name: resourceName,
 						nameSpace: nameSpace,
 						className: resourceFile.Replace('.', '_'),
@@ -252,6 +274,9 @@ namespace StrongTypeResource {
 
 			List<ResourceGroup> groups = this.BuildGroups(error, warning);
 			foreach(ResourceGroup group in groups) {
+				#if DEBUG
+					this.LogMessage($"Processing resource group:\n{group}");
+				#endif
 				IEnumerable<ResourceItem> items = ResourceParser.Parse(
 					group.ResxPath,
 					!this.OptionalParameters,

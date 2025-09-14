@@ -12,7 +12,13 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="EugeneLepekhin.StrongTypeResource" Version="1.1.6" />
+	  <EmbeddedResource Include="..\StrongTypeResourceUnitTests\Resources\Texts.resx" Link="NewResx\Texts.resx">
+	    <Generator>MSBuild:StrongTypeResourcePublic</Generator>
+	  </EmbeddedResource>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="EugeneLepekhin.StrongTypeResource" Version="1.1.7" />
 	</ItemGroup>
 
 	<ItemGroup>
