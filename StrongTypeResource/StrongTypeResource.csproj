@@ -5,7 +5,7 @@
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
 		<PlatformTarget>AnyCPU</PlatformTarget>
-		<Version>1.1.7</Version>
+		<Version>1.1.8</Version>
 		<AnalysisLevel>latest-all</AnalysisLevel>
 
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
