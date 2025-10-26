@@ -173,7 +173,7 @@ namespace StrongTypeResourceUnitTests {
 				errors.Add(message);
 			}
 			IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], (f, message) => addError(message), this.ThrowOnErrorMessage);
-			Assert.IsTrue(0 < errors.Count, "Expecting errors");
+			Assert.IsNotEmpty(errors, "Expecting errors");
 			this.ExpectErrorMessage(expectedError, errors[0]);
 			Assert.IsFalse(actual.Any());
 		}
@@ -244,7 +244,7 @@ namespace StrongTypeResourceUnitTests {
 				if(0 < variants.Length) {
 					CollectionAssert.AreEqual(variants, item.LocalizationVariants!.ToArray(), $"LocalizationVariants: {string.Join(", ", item.LocalizationVariants)}, expecting: {string.Join(", ", variants)}");
 				} else {
-					Assert.AreEqual(0, item.LocalizationVariants!.Count);
+					Assert.IsEmpty(item.LocalizationVariants);
 				}
 			}
 
@@ -338,7 +338,8 @@ namespace StrongTypeResourceUnitTests {
 			Assert.AreEqual(0, errors);
 			Assert.AreEqual(0, warnings);
 			ResourceItem item = actual.First();
-			Assert.AreEqual(1, item.Parameters!.Count);
+			Assert.IsNotNull(item.Parameters);
+			Assert.HasCount(1, item.Parameters);
 			Assert.IsNull(item.LocalizationVariants);
 		}
 
@@ -450,14 +451,15 @@ namespace StrongTypeResourceUnitTests {
 				Assert.AreEqual(0, errors);
 				Assert.AreEqual(0, warnings);
 				ResourceItem item = actual.First();
-				Assert.AreEqual(parameterCount, item.Parameters!.Count);
+				Assert.IsNotNull(item.Parameters);
+				Assert.HasCount(parameterCount, item.Parameters);
 				Assert.IsNull(item.LocalizationVariants);
 			}
 			void error(string path) {
 				int errors = 0;
 				int warnings = 0;
 				IEnumerable<ResourceItem> actual = ResourceParser.Parse(path, true, [], (f, s) => errors++, (f, s) => warnings++);
-				Assert.IsTrue(0 < errors);
+				Assert.IsGreaterThan(0, errors);
 				Assert.IsFalse(actual.Any());
 			}
 			
@@ -514,7 +516,7 @@ namespace StrongTypeResourceUnitTests {
 				IEnumerable<ResourceItem> actual = ResourceParser.Parse(main, false, [path], err, warn);
 				Assert.AreEqual(count, actual.Count());
 				Assert.AreEqual(0, errors);
-				Assert.IsTrue(0 < warnings);
+				Assert.IsGreaterThan(0, warnings);
 			}
 			void error(string name, string value) {
 				string path = this.WriteFile(R(R(name, value, null)));
@@ -522,7 +524,7 @@ namespace StrongTypeResourceUnitTests {
 				int warnings = 0;
 				IEnumerable<ResourceItem> actual = ResourceParser.Parse(main, true, [path], (f, s) => errors++, (f, s) => warnings++);
 				Assert.IsFalse(actual.Any());
-				Assert.IsTrue(0 < errors);
+				Assert.IsGreaterThan(0, errors);
 			}
 
 			valid("a", "b2");
@@ -551,7 +553,7 @@ namespace StrongTypeResourceUnitTests {
 				}
 				IEnumerable<ResourceItem> actual = ResourceParser.Parse(file, true, [], onError, this.ThrowOnErrorMessage);
 				Assert.IsFalse(actual.Any());
-				Assert.IsTrue(0 < errors);
+				Assert.IsGreaterThan(0, errors);
 			}
 			void warning(string name, string value, string? comment) {
 				string file = this.WriteFile(R(R(name, value, comment)));
@@ -562,7 +564,7 @@ namespace StrongTypeResourceUnitTests {
 				}
 				IEnumerable<ResourceItem> actual = ResourceParser.Parse(file, true, [], this.ThrowOnErrorMessage, onWarnign);
 				Assert.AreEqual(1, actual.Count());
-				Assert.IsTrue(0 < warnings);
+				Assert.IsGreaterThan(0, warnings);
 			}
 			
 			valid("a", "{0:dd MMMM yyyy}", "{DateTime i}");
@@ -647,7 +649,7 @@ namespace StrongTypeResourceUnitTests {
 				}
 				IEnumerable<ResourceItem> actual = ResourceParser.Parse(file, true, [], onError, this.ThrowOnErrorMessage);
 				Assert.IsFalse(actual.Any());
-				Assert.IsTrue(0 < errors);
+				Assert.IsGreaterThan(0, errors);
 			}
 
 			valid("a", "{0:d}", " { int i} ");
