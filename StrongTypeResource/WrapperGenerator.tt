@@ -41,13 +41,13 @@ namespace <#=this.NameSpace#> {
 
 		/// <summary>
 		/// Overrides the current thread's CurrentUICulture property for all
-		/// resource lookups using this strongly typed resource class.
+		/// resource look ups using this strongly typed resource class.
 		/// </summary>
 		[EditorBrowsable(EditorBrowsableState.Advanced)]
 		public static CultureInfo<#=this.AllowNull#> Culture { get; set; }
 
 		/// <summary>
-		/// Used for formating of the resource strings. Usually same as CultureInfo.CurrentCulture.
+		/// Used for formatting of the resource strings. Usually same as CultureInfo.CurrentCulture.
 		/// </summary>
 		[EditorBrowsable(EditorBrowsableState.Advanced)]
 		public static CultureInfo<#=this.AllowNull#> FormatCulture { get; set; }
