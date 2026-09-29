@@ -11,11 +11,11 @@ namespace StrongTypeResource {
 		internal sealed class Parser {
 			private const RegexOptions regexOptions = RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Singleline;
 			// - suppress validation of item
-			private readonly Regex suppressValidation = new Regex(@"^\s*-", regexOptions);
+			private readonly Regex suppressValidation = new Regex(@"^\s*-(?!\s*\{)", regexOptions);
 			// !(hello, world)
 			private readonly Regex variantList = new Regex(@"^\s*!\((?<list>.*?)\)", regexOptions);
 			// {int index, string message} hello, world {System.Int32 param} comment {} {MyType value1, Other value2, OneMore last}
-			private readonly Regex parameterList = new Regex(@"^\s*(?<prop>\??)\s*\{(?<param>[^}]+)\}", regexOptions);
+			private readonly Regex parameterList = new Regex(@"^\s*(?<minus>-?)\s*\{(?<param>[^}]+)\}", regexOptions);
 			// a.b.c.d a, int i, string text, System.Int32 index, MyType? value
 			private readonly Regex parameterDeclaration = new Regex(@"^\s*(?<type>[\p{L}_@][\p{L}\p{Nd}_]*(\s*\.\s*[\p{L}_@][\p{L}\p{Nd}_]*)*\s*(\??))\s+(?<name>[\p{L}_@][\p{L}\p{Nd}_]*)\s*$", regexOptions);
 			// any space characters
@@ -73,7 +73,7 @@ namespace StrongTypeResource {
 
 				Match paramsList = this.parameterList.Match(comment);
 				if(paramsList.Success) {
-					generateFunction = string.IsNullOrWhiteSpace(paramsList.Groups["prop"].Value);
+					generateFunction = string.IsNullOrWhiteSpace(paramsList.Groups["minus"].Value);
 					string[] list = paramsList.Groups["param"].Value.Split(',');
 					List<Parameter> parameterList = new List<Parameter>(list.Length);
 					foreach(string text in list) {

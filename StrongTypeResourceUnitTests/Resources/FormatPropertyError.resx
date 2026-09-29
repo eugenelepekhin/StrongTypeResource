@@ -119,6 +119,6 @@
   </resheader>
   <data name="PropertyFormat" xml:space="preserve">
     <value>abc {0} def {1:z}</value>
-    <comment>?{int i, int j} this should still be validated</comment>
+    <comment>-{int i, int j} this should still be validated</comment>
   </data>
 </root>

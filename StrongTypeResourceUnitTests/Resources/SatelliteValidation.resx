@@ -131,6 +131,6 @@
   </data>
   <data name="ValidateNoFunction" xml:space="preserve">
     <value>Not Function {0:d} returns {1:G}</value>
-    <comment>?{int i, double d}</comment>
+    <comment>-{int i, double d}</comment>
   </data>
 </root>

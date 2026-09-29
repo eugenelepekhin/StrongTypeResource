@@ -260,7 +260,7 @@ namespace StrongTypeResourceUnitTests {
 			[TestMethod]
 		public void IgnoreParameters1Test() {
 			string path = this.WriteFile(R(
-				R("a", "{0}", "-{int i}")
+				R("a", "{0}", "-//{int i}")
 			));
 			int errors = 0;
 			int warnings = 0;
@@ -276,7 +276,7 @@ namespace StrongTypeResourceUnitTests {
 		[TestMethod]
 		public void ErrorIgnoreParameters1Test() {
 			string path = this.WriteFile(R(
-				R("a", "{1}", "-{int i}")
+				R("a", "{1}", "-//{int i}")
 			));
 			int errors = 0;
 			int warnings = 0;
@@ -324,8 +324,8 @@ namespace StrongTypeResourceUnitTests {
 		[TestMethod]
 		public void PropertyParameterTest() {
 			string path = this.WriteFile(R(
-				R("a", "{0}", "?{int i}"),
-				R("b", "a{0}b{1}", "?{int i, int j}"),
+				R("a", "{0}", "-{int i}"),
+				R("b", "a{0}b{1}", "-{int i, int j}"),
 				R("c", "{0}", "{int i}"),
 				R("d", "a{0}b{1}", "{int i, int j}")
 			));

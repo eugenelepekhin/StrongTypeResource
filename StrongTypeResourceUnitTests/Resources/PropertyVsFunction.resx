@@ -122,11 +122,11 @@
   </data>
   <data name="NoValidation" xml:space="preserve">
     <value>abc {0} def {qwer}</value>
-    <comment>-{int i, int j}</comment>
+    <comment>-//{int i, int j}</comment>
   </data>
   <data name="PropertyFormat" xml:space="preserve">
     <value>abc {0} def {1}</value>
-    <comment>?{int i, int j}</comment>
+    <comment>-{int i, int j}</comment>
   </data>
   <data name="FunctionFormat" xml:space="preserve">
     <value>abc {0} def {1}</value>

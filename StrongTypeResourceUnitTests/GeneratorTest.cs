@@ -2,6 +2,7 @@
 using System.Reflection;
 using System.Resources;
 using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.Build.Utilities;
 using StrongTypeResource;
 
@@ -315,6 +316,15 @@ namespace StrongTypeResourceUnitTests {
 			});
 			string codePath = this.CodePath(resxFile);
 			Assert.IsTrue(File.Exists(codePath), "Generated code file does not not exist.");
+			string code = File.ReadAllText(codePath);
+
+			StringAssert.Contains(code, "public static string JustFunction(int i) {", "Missing function JustFunction");
+			StringAssert.Contains(code, "public static string JustProperty {", "Missing property JustProperty");
+			StringAssert.Contains(code, "public static string NoValidation {", "Missing property NoValidation");
+			StringAssert.Contains(code, "public static string ValidateNoFunction {", "Missing property ValidateNoFunction");
+
+			StringAssert.Contains(errors, "warning : 'ValidateNoFunction'", "Missing warnings for ValidateNoFunction resource");
+			StringAssert.DoesNotMatch(errors, new Regex("NoValidation"), "Unexpected error message for NoValidation resource");
 		}
 	}
 }

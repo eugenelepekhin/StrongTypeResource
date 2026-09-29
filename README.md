@@ -160,18 +160,19 @@ become: UserLoggedIn(string userName, DateTime time)
 ```
 
 ### Skip Method Generation
-To generate a formatted string as a property instead of a method, add a minus (`-`) at the beginning of the comment:
+To generate a formatted string as a property instead of a method, add a minus (`-`) at the beginning of the comment. Make sure there is no `{` right after the minus:
 ```
 -This will be a property, not a method. Format items will not be validated.
+-//{int i} this also will become a property and no validation will be performed, as the { is not directly following minus
 ```
 
 ### Skip Method Generation but still validate formatting items
 To generate formatted string as a property but still perform validation of format items in main resource file as well as in satellite resources,
-specify format parameters as you'd do it for function, but add question mark at the beginning of the comment:
+specify format parameters as you'd do it for function, but add minus at the beginning of the comment like you would do to make a property:
 ```
 string: "Total: {0:C}"
-comment: ?{decimal amount}
-become property: TotalAmount
+comment: -{decimal amount}
+become property: TotalAmount and validation will be performed.
 ```
 
 ### Enumeration Strings
