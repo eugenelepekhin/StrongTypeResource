@@ -165,6 +165,15 @@ To generate a formatted string as a property instead of a method, add a minus (`
 -This will be a property, not a method. Format items will not be validated.
 ```
 
+### Skip Method Generation but still validate formatting items
+To generate formatted string as a property but still perform validation of format items in main resource file as well as in satellite resources,
+specify format parameters as you'd do it for function, but add question mark at the beginning of the comment:
+```
+string: "Total: {0:C}"
+comment: ?{decimal amount}
+become property: TotalAmount
+```
+
 ### Enumeration Strings
 For strings that should be restricted to specific values, add a comment with the exclamation mark `!` followed by allowed values:
 
