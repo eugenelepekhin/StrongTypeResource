@@ -247,7 +247,9 @@ namespace StrongTypeResource {
 									} else if(formats != null && item.Value != value && mainFile != null) {
 										// validating satellite, check if format strings are matching with main file.
 										// the main file format items should be pars-able at this point
-										void warning() => this.Warning(item.Name, "format placeholders in satellite resource doesn't match any{0}", mainReference(null));
+										void warning() => this.Warning(item.Name,
+											"the {{{0}}} placeholder in the localized resource string is formatted differently than{1}", i, mainReference(null)
+										);
 										if(mainIndexes.TryGetValue(i, out List<string>? main) && main != null) {
 											foreach(string format in formats) {
 												if(!main.Any(f => StringComparer.OrdinalIgnoreCase.Equals(format, f))) {

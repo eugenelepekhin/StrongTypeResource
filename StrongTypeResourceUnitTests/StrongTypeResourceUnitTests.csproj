@@ -17,6 +17,9 @@
     <EmbeddedResource Remove="Resources\NameDuplicated.resx" />
     <EmbeddedResource Remove="Resources\NoName.resx" />
     <EmbeddedResource Remove="Resources\PropertyVsFunction.resx" />
+    <EmbeddedResource Remove="Resources\SatelliteValidation.es.resx" />
+    <EmbeddedResource Remove="Resources\SatelliteValidation.resx" />
+    <EmbeddedResource Remove="Resources\SatelliteValidation.ru.resx" />
     <EmbeddedResource Remove="Resources\SpacePreserve.resx" />
     <EmbeddedResource Remove="Resources\Texts.resx" />
     <EmbeddedResource Remove="Resources\Texts.ru.resx" />
@@ -40,6 +43,16 @@
     </None>
     <None Include="Resources\CommentDuplicated.resx">
       <Generator></Generator>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Resources\SatelliteValidation.es.resx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Resources\SatelliteValidation.resx">
+      <Generator></Generator>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Resources\SatelliteValidation.ru.resx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="Resources\SpacePreserve.resx">

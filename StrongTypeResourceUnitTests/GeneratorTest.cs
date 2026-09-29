@@ -58,12 +58,17 @@ namespace StrongTypeResourceUnitTests {
 			}
 		}
 
-		private StrongTypeResourceGenerator CreateGenerator(string resxPath) {
-			string resxFile = Path.Combine(this.TestContext!.DeploymentDirectory!, resxPath!);
-			Assert.IsTrue(File.Exists(resxFile), "Resx file does not exist: " + resxFile);
-			TaskItem main = new TaskItem(resxFile);
+		private string ResxPath(string resxFile) => Path.Combine(this.TestContext!.DeploymentDirectory!, "Resources", resxFile);
+		private string CodePath(string resxPath) => this.ResxPath(resxPath!) + ".cs";
+
+		private StrongTypeResourceGenerator CreateGenerator(string resxPath, params string[] satellitePaths) {
+			TaskItem main = new TaskItem(this.ResxPath(resxPath));
 			main.SetMetadata("Generator", "MSBuild:StrongTypeResourcePublic");
-			TaskItem[] taskItems = [main];
+
+			TaskItem[] taskItems = satellitePaths.Select(p => new TaskItem(this.ResxPath(p))).Prepend(main).ToArray();
+			foreach(TaskItem item in taskItems) {
+				Assert.IsTrue(File.Exists(item.ItemSpec), "ResX file does not exist: " + item.ItemSpec);
+			}
 
 			StrongTypeResourceGenerator generator = new() {
 				ProjectDirectory = this.TestContext!.DeploymentDirectory!,
@@ -159,7 +164,6 @@ namespace StrongTypeResourceUnitTests {
 		}
 
 		[TestMethod]
-		[DeploymentItem(@"Resources\BadRoot.resx")]
 		public void BadRootTest() {
 			string errors = this.InterceptConsoleError(() => {
 				StrongTypeResourceGenerator generator = this.CreateGenerator(@"BadRoot.resx");
@@ -170,7 +174,6 @@ namespace StrongTypeResourceUnitTests {
 		}
 
 		[TestMethod]
-		[DeploymentItem(@"Resources\NoName.resx")]
 		public void NoNameTest() {
 			string errors = this.InterceptConsoleError(() => {
 				StrongTypeResourceGenerator generator = this.CreateGenerator(@"NoName.resx");
@@ -181,7 +184,6 @@ namespace StrongTypeResourceUnitTests {
 		}
 
 		[TestMethod]
-		[DeploymentItem(@"Resources\EmptyData.resx")]
 		public void EmptyDataTest() {
 			string errors = this.InterceptConsoleError(() => {
 				StrongTypeResourceGenerator generator = this.CreateGenerator(@"EmptyData.resx");
@@ -192,7 +194,6 @@ namespace StrongTypeResourceUnitTests {
 		}
 
 		[TestMethod]
-		[DeploymentItem(@"Resources\ValueDuplicated.resx")]
 		public void ValueDuplicatedTest() {
 			string errors = this.InterceptConsoleError(() => {
 				StrongTypeResourceGenerator generator = this.CreateGenerator(@"ValueDuplicated.resx");
@@ -203,7 +204,6 @@ namespace StrongTypeResourceUnitTests {
 		}
 
 		[TestMethod]
-		[DeploymentItem(@"Resources\CommentDuplicated.resx")]
 		public void CommentDuplicatedTest() {
 			string errors = this.InterceptConsoleError(() => {
 				StrongTypeResourceGenerator generator = this.CreateGenerator(@"CommentDuplicated.resx");
@@ -214,7 +214,6 @@ namespace StrongTypeResourceUnitTests {
 		}
 
 		[TestMethod]
-		[DeploymentItem(@"Resources\UnexpectedNode.resx")]
 		public void UnexpectedNodeTest() {
 			string errors = this.InterceptConsoleError(() => {
 				StrongTypeResourceGenerator generator = this.CreateGenerator(@"UnexpectedNode.resx");
@@ -227,7 +226,6 @@ namespace StrongTypeResourceUnitTests {
 		}
 
 		[TestMethod]
-		[DeploymentItem(@"Resources\NameDuplicated.resx")]
 		public void NameDuplicatedTest() {
 			string errors = this.InterceptConsoleError(() => {
 				StrongTypeResourceGenerator generator = this.CreateGenerator(@"NameDuplicated.resx");
@@ -238,7 +236,6 @@ namespace StrongTypeResourceUnitTests {
 		}
 
 		[TestMethod]
-		[DeploymentItem(@"Resources\TypeDuplicated.resx")]
 		public void TypeDuplicated() {
 			string errors = this.InterceptConsoleError(() => {
 				StrongTypeResourceGenerator generator = this.CreateGenerator(@"TypeDuplicated.resx");
@@ -249,42 +246,25 @@ namespace StrongTypeResourceUnitTests {
 		}
 
 		[TestMethod]
-		[DeploymentItem(@"Resources\Texts.resx", "Resources")]
 		public void GeneratesCodeLocationTest() {
-			string projectDirectory = this.TestContext!.DeploymentDirectory!;
-			string resxFile = @"Resources\Texts.resx";
-			Assert.IsTrue(File.Exists(Path.Combine(projectDirectory, resxFile)), "Resx file does not exist: " + resxFile);
-			TaskItem main = new TaskItem(resxFile);
-			main.SetMetadata("Generator", "MSBuild:StrongTypeResourcePublic");
-			TaskItem[] taskItems = [main];
-
-			StrongTypeResourceGenerator generator = new() {
-				ProjectDirectory = projectDirectory,
-				ResxFiles = taskItems,
-				CodeOutputPath = this.TestContext!.TestRunDirectory!,
-				RootNamespace = "StrongTypeResourceUnitTests",
-				NullableEnabled = true,
-				PseudoCulture = false,
-				FlowDirection = false,
-				OptionalParameters = false,
-				LogToConsole = true
-			};
+			string resxFile = "Texts.resx";
+			StrongTypeResourceGenerator generator = this.CreateGenerator(resxFile);
 
 			bool result = generator.Execute();
 			Assert.IsTrue(result, "Generator execution failed");
-			string codePath = Path.Combine(this.TestContext!.TestRunDirectory!, resxFile + ".cs");
+			string codePath = this.CodePath(resxFile);
 			Assert.IsTrue(File.Exists(codePath), "Generated code file does not exist.");
 			string code = File.ReadAllText(codePath);
 			StringAssert.Contains(code, "get { return ResourceManager.GetString(\"String1\", Culture)!; }", "Generated code does not contain expected class declaration");
 		}
 
 		[TestMethod]
-		[DeploymentItem(@"Resources\SpacePreserve.resx")]
 		public void SpacePreserveTest() {
-			StrongTypeResourceGenerator generator = this.CreateGenerator(@"SpacePreserve.resx");
+			string resxFile = "SpacePreserve.resx";
+			StrongTypeResourceGenerator generator = this.CreateGenerator(resxFile);
 			bool result = generator.Execute();
 			Assert.IsTrue(result, "Generator execution failed");
-			string codePath = Path.Combine(this.TestContext!.DeploymentDirectory!, "SpacePreserve.resx.cs");
+			string codePath = this.CodePath(resxFile);
 			Assert.IsTrue(File.Exists(codePath), "Generated code file does not exist.");
 			string code = File.ReadAllText(codePath);
 			StringAssert.Contains(code, "get { return ResourceManager.GetString(\"String1\", Culture)!; }", "Generated code does not contain expected class declaration");
@@ -293,12 +273,12 @@ namespace StrongTypeResourceUnitTests {
 		}
 
 		[TestMethod]
-		[DeploymentItem(@"Resources\PropertyVsFunction.resx")]
 		public void PropertyVsFunctionTest() {
-			StrongTypeResourceGenerator generator = this.CreateGenerator(@"PropertyVsFunction.resx");
+			string resxFile = "PropertyVsFunction.resx";
+			StrongTypeResourceGenerator generator = this.CreateGenerator(resxFile);
 			bool result = generator.Execute();
 			Assert.IsTrue(result, "Generator execution failed");
-			string codePath = Path.Combine(this.TestContext!.DeploymentDirectory!, "PropertyVsFunction.resx.cs");
+			string codePath = this.CodePath(resxFile);
 			Assert.IsTrue(File.Exists(codePath), "Generated code file does not exist.");
 			string code = File.ReadAllText(codePath);
 
@@ -309,16 +289,32 @@ namespace StrongTypeResourceUnitTests {
 		}
 
 		[TestMethod]
-		[DeploymentItem(@"Resources\FormatPropertyError.resx")]
 		public void FormatPropertyErrorTest() {
+			string resxFile = "FormatPropertyError.resx";
 			string errors = this.InterceptConsoleError(() => {
-				StrongTypeResourceGenerator generator = this.CreateGenerator(@"FormatPropertyError.resx");
+				StrongTypeResourceGenerator generator = this.CreateGenerator(resxFile);
 				bool result = generator.Execute();
 				Assert.IsFalse(result, "Generator should fail.");
 			});
 			StringAssert.Contains(errors, "invalid format specifier in: abc {0} def {1:z}");
-			string codePath = Path.Combine(this.TestContext!.DeploymentDirectory!, "FormatPropertyError.resx.cs");
+			string codePath = this.CodePath(resxFile);
 			Assert.IsFalse(File.Exists(codePath), "Generated code file should not not exist.");
+		}
+
+		[TestMethod]
+		public void SatellitesValidationTest() {
+			string resxFile = "SatelliteValidation.resx";
+			string errors = this.InterceptConsoleError(() => {
+				StrongTypeResourceGenerator generator = this.CreateGenerator(
+					resxFile,
+					"SatelliteValidation.es.resx",
+					"SatelliteValidation.ru.resx"
+				);
+				bool result = generator.Execute();
+				Assert.IsTrue(result);
+			});
+			string codePath = this.CodePath(resxFile);
+			Assert.IsTrue(File.Exists(codePath), "Generated code file does not not exist.");
 		}
 	}
 }
