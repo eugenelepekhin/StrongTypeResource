@@ -210,12 +210,12 @@ namespace StrongTypeResourceUnitTests {
 
 		[TestMethod]
 		public void DeclarationParameters1Test() {
-			this.AssertError("a", "{0}", "{int_i}", "bad parameter declaration: int_i");
+			this.AssertError("a", "{0}", "{int_i}", "invalid parameter declaration: int_i");
 		}
 
 		[TestMethod]
 		public void DeclarationParameters2Test() {
-			this.AssertError("a", "{0}{1}", "{int i int j}", "bad parameter declaration: int i int j");
+			this.AssertError("a", "{0}{1}", "{int i int j}", "invalid parameter declaration: int i int j");
 		}
 
 		[TestMethod]
@@ -322,6 +322,46 @@ namespace StrongTypeResourceUnitTests {
 		}
 
 		[TestMethod]
+		public void PropertyParameterTest() {
+			string path = this.WriteFile(R(
+				R("a", "{0}", "?{int i}"),
+				R("b", "a{0}b{1}", "?{int i, int j}"),
+				R("c", "{0}", "{int i}"),
+				R("d", "a{0}b{1}", "{int i, int j}")
+			));
+			int errors = 0;
+			int warnings = 0;
+			List<ResourceItem> actual = ResourceParser.Parse(path, true, [], (f, s) => errors++, (f, s) => warnings++).ToList();
+			Assert.AreEqual(4, actual.Count);
+			Assert.AreEqual(0, errors);
+			Assert.AreEqual(0, warnings);
+
+			ResourceItem item = actual[0];
+			Assert.IsTrue(item.HasParameters);
+			Assert.AreEqual(1, item.Parameters!.Count);
+			Assert.IsNull(item.LocalizationVariants);
+			Assert.IsFalse(item.GenerateFunction);
+
+			item = actual[1];
+			Assert.IsTrue(item.HasParameters);
+			Assert.AreEqual(2, item.Parameters!.Count);
+			Assert.IsNull(item.LocalizationVariants);
+			Assert.IsFalse(item.GenerateFunction);
+
+			item = actual[2];
+			Assert.IsTrue(item.HasParameters);
+			Assert.AreEqual(1, item.Parameters!.Count);
+			Assert.IsNull(item.LocalizationVariants);
+			Assert.IsTrue(item.GenerateFunction);
+
+			item = actual[3];
+			Assert.IsTrue(item.HasParameters);
+			Assert.AreEqual(2, item.Parameters!.Count);
+			Assert.IsNull(item.LocalizationVariants);
+			Assert.IsTrue(item.GenerateFunction);
+		}
+
+		[TestMethod]
 		public void VariantsError1Test() {
 			this.AssertError("a", "b", "!(c, d, e)", @"provided value 'b' is not in the list of allowed options: (c, d, e)");
 		}
@@ -403,7 +443,7 @@ namespace StrongTypeResourceUnitTests {
 
 			//test validation of missing parameter numbers
 			valid("{2}{0}{1}", "{int i, int j, int k}");
-			error("{2}{0}", "string value contains formating placeholders, but the function parameters declaration is missing in the comment");
+			error("{2}{0}", "string value contains formatting placeholders, but the function parameters declaration is missing in the comment");
 		}
 
 		[TestMethod]
@@ -485,19 +525,21 @@ namespace StrongTypeResourceUnitTests {
 
 		[TestMethod]
 		public void SatellitesValidationTest() {
-			string main = this.WriteFile(R(
+			Res[] mainContent = R(
 				R("a", "b", null),
 				R("b", "{0}", "{int i}"),
 				R("c", "{0}{1}{2}", "{int i, int j, int k}"),
-				R("d", "abc", "!(abc, def, ghi)")
-			));
-			const int count = 4;
+				R("d", "abc", "!(abc, def, ghi)"),
+				R("g", "{0:N0}", "{int i}"),
+				R("m", "a{1:G0}b{0}c{1:F3}", "{int i, double d}")
+			);
+			string main = this.WriteFile(mainContent);
 			void valid(string name, string value) {
 				string path = this.WriteFile(R(R(name, value, null)));
 				int errors = 0;
 				int warnings = 0;
 				IEnumerable<ResourceItem> actual = ResourceParser.Parse(main, true, [path], (f, s) => errors++, (f, s) => warnings++);
-				Assert.AreEqual(count, actual.Count());
+				Assert.AreEqual(mainContent.Length, actual.Count());
 				Assert.AreEqual(0, errors);
 				Assert.AreEqual(0, warnings);
 			}
@@ -514,7 +556,7 @@ namespace StrongTypeResourceUnitTests {
 					warnings++;
 				}
 				IEnumerable<ResourceItem> actual = ResourceParser.Parse(main, false, [path], err, warn);
-				Assert.AreEqual(count, actual.Count());
+				Assert.AreEqual(mainContent.Length, actual.Count());
 				Assert.AreEqual(0, errors);
 				Assert.IsGreaterThan(0, warnings);
 			}
@@ -531,10 +573,18 @@ namespace StrongTypeResourceUnitTests {
 			warning("a", "{0}");
 			valid("b", "d{0}d");
 			valid("c", "a{1}b{0}c{2}d");
+			valid("g", "{0:N0}");
+			warning("g", "{0:Ne}");
 
 			warning("e", "f");
 			error("d", "zxc");
 			error("c", "{1}");
+
+			// check for multiple format values
+			valid("m", "c{1:F3}a{1:G0}b{0}");
+			warning("m", "c{1:F3}a{1:G2}b{0}");
+			warning("m", "c{1:F}a{1:G0}b{0}");
+			warning("m", "c{1:F3}a{1:G0}b{0:C}");
 		}
 
 		[TestMethod]
@@ -591,6 +641,8 @@ namespace StrongTypeResourceUnitTests {
 			valid("a", "{0:d} {0:g} {0:f}", "{Int16? i}");
 
 			error("a", "{0:k}", "{int i}");
+			valid("a", "{0:N0}", "{int i}");
+			//error("a", "{0:Ne}", "{int i}"); // result here will be: "Ne" instead of number, but there no error will be detected by .net
 			error("a", "{0:d} {0:k} {0:f}", "{Int16 i}");
 			error("a", "{0:k}", "{int? i}");
 			error("a", "{0:d} {0:k} {0:f}", "{Int16? i}");

@@ -291,5 +291,34 @@ namespace StrongTypeResourceUnitTests {
 			StringAssert.Contains(code, "get { return ResourceManager.GetString(\"String2\", Culture)!; }", "Generated code does not contain expected class declaration");
 			StringAssert.Contains(code, "get { return ResourceManager.GetString(\"String3\", Culture)!; }", "Generated code does not contain expected class declaration");
 		}
+
+		[TestMethod]
+		[DeploymentItem(@"Resources\PropertyVsFunction.resx")]
+		public void PropertyVsFunctionTest() {
+			StrongTypeResourceGenerator generator = this.CreateGenerator(@"PropertyVsFunction.resx");
+			bool result = generator.Execute();
+			Assert.IsTrue(result, "Generator execution failed");
+			string codePath = Path.Combine(this.TestContext!.DeploymentDirectory!, "PropertyVsFunction.resx.cs");
+			Assert.IsTrue(File.Exists(codePath), "Generated code file does not exist.");
+			string code = File.ReadAllText(codePath);
+
+			StringAssert.Contains(code, "public static string NoFormat {", "Missing property NoFormat");
+			StringAssert.Contains(code, "public static string NoValidation {", "Missing property NoValidation");
+			StringAssert.Contains(code, "public static string PropertyFormat {", "Missing property PropertyFormat");
+			StringAssert.Contains(code, "public static string FunctionFormat(int i, int j) {", "Missing function FunctionFormat");
+		}
+
+		[TestMethod]
+		[DeploymentItem(@"Resources\FormatPropertyError.resx")]
+		public void FormatPropertyErrorTest() {
+			string errors = this.InterceptConsoleError(() => {
+				StrongTypeResourceGenerator generator = this.CreateGenerator(@"FormatPropertyError.resx");
+				bool result = generator.Execute();
+				Assert.IsFalse(result, "Generator should fail.");
+			});
+			StringAssert.Contains(errors, "invalid format specifier in: abc {0} def {1:z}");
+			string codePath = Path.Combine(this.TestContext!.DeploymentDirectory!, "FormatPropertyError.resx.cs");
+			Assert.IsFalse(File.Exists(codePath), "Generated code file should not not exist.");
+		}
 	}
 }

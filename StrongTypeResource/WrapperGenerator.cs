@@ -466,7 +466,7 @@ foreach(ResourceItem item in this.Items) {
             this.Write(".\r\n\t\t/// </summary>\r\n");
             
             #line 227 "C:\Projects\StrongTypeResource\StrongTypeResource\WrapperGenerator.tt"
-	if(item.Parameters != null) {
+	if(item.Parameters != null && item.GenerateFunction) {
             
             #line default
             #line hidden

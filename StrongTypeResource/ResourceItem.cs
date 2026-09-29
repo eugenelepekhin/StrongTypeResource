@@ -15,7 +15,7 @@ namespace StrongTypeResource {
 			// !(hello, world)
 			private readonly Regex variantList = new Regex(@"^\s*!\((?<list>.*?)\)", regexOptions);
 			// {int index, string message} hello, world {System.Int32 param} comment {} {MyType value1, Other value2, OneMore last}
-			private readonly Regex parameterList = new Regex(@"^\s*\{(?<param>[^}]+)\}", regexOptions);
+			private readonly Regex parameterList = new Regex(@"^\s*(?<prop>\??)\s*\{(?<param>[^}]+)\}", regexOptions);
 			// a.b.c.d a, int i, string text, System.Int32 index, MyType? value
 			private readonly Regex parameterDeclaration = new Regex(@"^\s*(?<type>[\p{L}_@][\p{L}\p{Nd}_]*(\s*\.\s*[\p{L}_@][\p{L}\p{Nd}_]*)*\s*(\??))\s+(?<name>[\p{L}_@][\p{L}\p{Nd}_]*)\s*$", regexOptions);
 			// any space characters
@@ -39,10 +39,11 @@ namespace StrongTypeResource {
 				this.Warning = warning;
 			}
 
-			public bool ParseComment(string name, string? comment, out bool suppressValidation, out IList<string>? localizationVariants, out IList<Parameter>? parameters) {
+			public bool ParseComment(string name, string? comment, out bool suppressValidation, out IList<string>? localizationVariants, out IList<Parameter>? parameters, out bool generateFunction) {
 				suppressValidation = false;
 				localizationVariants = null;
 				parameters = null;
+				generateFunction = false;
 
 				if(string.IsNullOrWhiteSpace(comment)) {
 					return true; // No comment to parse
@@ -72,6 +73,7 @@ namespace StrongTypeResource {
 
 				Match paramsList = this.parameterList.Match(comment);
 				if(paramsList.Success) {
+					generateFunction = string.IsNullOrWhiteSpace(paramsList.Groups["prop"].Value);
 					string[] list = paramsList.Groups["param"].Value.Split(',');
 					List<Parameter> parameterList = new List<Parameter>(list.Length);
 					foreach(string text in list) {
@@ -79,7 +81,7 @@ namespace StrongTypeResource {
 						if(parameterMatch.Success) {
 							parameterList.Add(new Parameter(this.space.Replace(parameterMatch.Groups["type"].Value, string.Empty), parameterMatch.Groups["name"].Value));
 						} else {
-							this.Error(name, $"bad parameter declaration: {text.Trim()}");
+							this.Error(name, $"invalid parameter declaration: {text.Trim()}");
 							return false; // Invalid parameter declaration
 						}
 					}
@@ -103,6 +105,7 @@ namespace StrongTypeResource {
 		/// List of parameters if format placeholders are present, null otherwise.
 		/// </summary>
 		public IList<Parameter>? Parameters { get; private set; }
+		public bool GenerateFunction { get; private set; }
 		/// <summary>
 		/// List of variant acceptable for this resource if it specified like: !(one, two, three) null otherwise.
 		/// </summary>
@@ -112,7 +115,7 @@ namespace StrongTypeResource {
 		/// </summary>
 		public bool SuppressValidation { get; private set; }
 		public bool IsEnumeration => this.LocalizationVariants != null && 0 < this.LocalizationVariants.Count;
-		public bool IsFunction => this.Parameters != null && 0 < this.Parameters.Count;
+		public bool HasParameters => this.Parameters != null && 0 < this.Parameters.Count;
 
 		public ResourceItem(string name, string value, string type) {
 			this.Name = name;
@@ -121,16 +124,19 @@ namespace StrongTypeResource {
 		}
 
 		public bool ParseComment(Parser parser, string? comment) {
-			if(parser.ParseComment(this.Name, comment, out bool suppressValidation,  out IList<string>? localizationVariants, out IList<Parameter>? parameters)) {
+			if(parser.ParseComment(
+				this.Name, comment, out bool suppressValidation,  out IList<string>? localizationVariants, out IList<Parameter>? parameters, out bool generateFunction
+			)) {
 				Debug.Assert(
-					localizationVariants == null && parameters == null ||
-					!suppressValidation && localizationVariants != null && parameters == null ||
+					localizationVariants == null && parameters == null && !generateFunction ||
+					!suppressValidation && localizationVariants != null && parameters == null && !generateFunction ||
 					!suppressValidation && localizationVariants == null && parameters != null,
-					"Invalid combination of suppressValidation, localizationVariants and parameters."
+					"Invalid combination of suppressValidation, localizationVariants, parameters, and generateFunction."
 				);
 				this.SuppressValidation = suppressValidation;
 				this.LocalizationVariants = localizationVariants;
 				this.Parameters = parameters;
+				this.GenerateFunction = generateFunction;
 				return true; // Comment parsed successfully
 			} else {
 				return false; // Error in parsing comment
@@ -228,7 +234,7 @@ namespace StrongTypeResource {
 		/// <param name="formatString">format string part of format item</param>
 		/// <returns></returns>
 		public bool IsValidFormatString(int index, string formatString, Parser parser) {
-			if(this.IsFunction && index < this.Parameters!.Count) {
+			if(this.HasParameters && index < this.Parameters!.Count) {
 				string type = this.Parameters[index].Type.TrimEnd('?');
 				switch(type) {
 				case "DateTime":

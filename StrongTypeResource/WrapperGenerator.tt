@@ -224,7 +224,7 @@ namespace <#=this.NameSpace#> {
 		/// <summary>
 		/// Looks up a localized string similar to <#=item.Comment()#>.
 		/// </summary>
-<#	if(item.Parameters != null) {#>
+<#	if(item.Parameters != null && item.GenerateFunction) {#>
  		public static string <#=item.Name#>(<#=item.ParametersDeclaration()#>) {
 			return string.Format(FormatCulture, <#=item.GetStringExpression(this.Pseudo)#>"<#=item.Name#>", Culture)<#=this.NotNull#>, <#=item.ParametersInvocation()#>);
 		}

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
@@ -12,11 +13,18 @@ namespace StrongTypeResource {
 	/// Expect the following syntax on comment:
 	/// - minus in the first position of the comment turn off any parsing and property will be generated.
 	/// !(value1, value2, ... valueN) list of allowed items. The value of the resource is expected to be one of the value1-valueN
-	/// If there is no formating parameters than comment is ignored
-	/// If there are formating parameters comment should declare parameters of formating function: {type1 parameter1, type2 parameter2, ... typeM parameterM}
+	/// If there is no formatting parameters than comment is ignored
+	/// If there are formatting parameters comment should declare parameters of formatting function: {type1 parameter1, type2 parameter2, ... typeM parameterM}
+	/// The to verify formatting parameters but still generate property prepend declaration of parameters with question mark: ?{type1 parameter1, ... typeM parameterM}
 	/// </summary>
 	internal sealed class ResourceParser {
-		public static IEnumerable<ResourceItem> Parse(string file, bool enforceParameterDeclaration, IEnumerable<string> satellites, Action<string?, string> errorMessage, Action<string?, string> warningMessage) {
+		public static IEnumerable<ResourceItem> Parse(
+			string file,
+			bool enforceParameterDeclaration,
+			IEnumerable<string> satellites,
+			Action<string?, string> errorMessage,
+			Action<string?, string> warningMessage
+		) {
 			ResourceParser parser = new ResourceParser(enforceParameterDeclaration, errorMessage, warningMessage);
 
 			List<ResourceItem> list = new List<ResourceItem>();
@@ -172,10 +180,6 @@ namespace StrongTypeResource {
 			return string.Format(CultureInfo.InvariantCulture, format, args);
 		}
 
-		private static string MainFileReference(string? prefix, string? fileName) {
-			return (fileName != null) ? ResourceParser.Format("{0} in main resource file: \"{1}\"", prefix ?? string.Empty, fileName) : string.Empty;
-		}
-
 		private ResourceItem? GenerateInclude(string name, string value) {
 			void corrupted(string nodeName) => this.Error(nodeName, "structure of the value node is corrupted.");
 			string[] list = value.Split(';');
@@ -206,35 +210,58 @@ namespace StrongTypeResource {
 		}
 
 		private void ValidateString(ResourceItem item, string value, string? mainFile) {
+			string mainReference(string? prefix) {
+				return (mainFile != null) ? ResourceParser.Format("{0} in main resource file: \"{1}\"", prefix ?? string.Empty, mainFile) : string.Empty;
+			}
+
 			if(!item.SuppressValidation) {
 				if(item.IsEnumeration) {
 					if(!item.IsValidEnumerationOption(value)) {
-						this.Error(item.Name, "provided value '{0}' is not in the list of allowed options: ({1}){2}.", value, string.Join(", ", item.LocalizationVariants), MainFileReference(" defined", mainFile));
+						this.Error(item.Name, "provided value '{0}' is not in the list of allowed options: ({1}){2}.", value, string.Join(", ", item.LocalizationVariants), mainReference(" defined"));
 					}
 				} else {
 					Dictionary<int, List<string>?> usedIndexes = new();
-					if(this.ParseFormatItems(item, value, usedIndexes)) {
+					if(this.ParseFormatItems(item.Name, value, usedIndexes)) {
 						if(0 < usedIndexes.Count) {
-							if(!item.IsFunction) {
-								string error = Format("string value contains formating placeholders, but the function parameters declaration is missing in the comment{0}.", MainFileReference(null, mainFile));
+							if(!item.HasParameters) {
+								string error = Format("string value contains formatting placeholders, but the function parameters declaration is missing in the comment{0}.", mainReference(null));
 								if(this.enforceParameterDeclaration) {
 									this.Error(item.Name, error);
 								} else {
 									this.Warning(item.Name, error);
 								}
 							} else if(item.Parameters!.Count != usedIndexes.Count) {
-								this.Error(item.Name, "the number of format placeholders in the string doesn't match number of parameters listed in the comment{0}", MainFileReference(null, mainFile));
+								this.Error(item.Name, "the number of format placeholders in the string doesn't match number of parameters listed in the comment{0}", mainReference(null));
 							} else {
+								Dictionary<int, List<string>?> mainIndexes = usedIndexes;
+								if(mainFile != null && item.Value != value) {
+									mainIndexes = new ();
+									bool success = this.ParseFormatItems(item.Name, item.Value, mainIndexes);
+									Debug.Assert(success && usedIndexes.Count == mainIndexes.Count);
+								}
 								for(int i = 0; i < usedIndexes.Count; i++) {
 									if(!usedIndexes.TryGetValue(i, out List<string>? formats)) {
 										this.Error(item.Name, "format placeholder '{{{0}}}' is not used in the format string", i);
 									} else if(formats != null && !formats.All(f => item.IsValidFormatString(i, f, this.parser))) {
 										this.Error(item.Name, "format item '{{{0}}}' has invalid format specifier in: {1}", i, value);
+									} else if(formats != null && item.Value != value && mainFile != null) {
+										// validating satellite, check if format strings are matching with main file.
+										// the main file format items should be pars-able at this point
+										void warning() => this.Warning(item.Name, "format placeholders in satellite resource doesn't match any{0}", mainReference(null));
+										if(mainIndexes.TryGetValue(i, out List<string>? main) && main != null) {
+											foreach(string format in formats) {
+												if(!main.Any(f => StringComparer.OrdinalIgnoreCase.Equals(format, f))) {
+													warning();
+												}
+											}
+										} else {
+											warning();
+										}
 									}
 								}
 							}
-						} else if(item.IsFunction) {
-							this.Error(item.Name, "no format items are used in the value, but function parameters are declared in the comment{0}.", MainFileReference(null, mainFile));
+						} else if(item.HasParameters) {
+							this.Error(item.Name, "no format items are used in the value, but function parameters are declared in the comment{0}.", mainReference(null));
 						}
 					}
 				}
@@ -242,8 +269,8 @@ namespace StrongTypeResource {
 		}
 
 		[SuppressMessage("Performance", "CA1854:Prefer the 'IDictionary.TryGetValue(TKey, out TValue)' method")]
-		private bool ParseFormatItems(ResourceItem item, string value, Dictionary<int, List<string>?> usedIndexes) {
-			bool invalid() { this.Error(item.Name, "invalid format item in: {0}", value); return false; }
+		private bool ParseFormatItems(string itemName, string value, Dictionary<int, List<string>?> usedIndexes) {
+			bool invalid() { this.Error(itemName, "invalid format item in: {0}", value); return false; }
 			int position = -1;
 			int current;
 			int next() => current = ++position < value.Length ? value[position] : -1;

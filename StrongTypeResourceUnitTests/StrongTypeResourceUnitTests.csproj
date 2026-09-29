@@ -13,8 +13,10 @@
     <EmbeddedResource Remove="Resources\BadRoot.resx" />
     <EmbeddedResource Remove="Resources\CommentDuplicated.resx" />
     <EmbeddedResource Remove="Resources\EmptyData.resx" />
+    <EmbeddedResource Remove="Resources\FormatPropertyError.resx" />
     <EmbeddedResource Remove="Resources\NameDuplicated.resx" />
     <EmbeddedResource Remove="Resources\NoName.resx" />
+    <EmbeddedResource Remove="Resources\PropertyVsFunction.resx" />
     <EmbeddedResource Remove="Resources\SpacePreserve.resx" />
     <EmbeddedResource Remove="Resources\Texts.resx" />
     <EmbeddedResource Remove="Resources\Texts.ru.resx" />
@@ -24,6 +26,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="Resources\FormatPropertyError.resx">
+      <Generator></Generator>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Resources\PropertyVsFunction.resx">
+      <Generator></Generator>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Resources\BadRoot.resx">
       <Generator></Generator>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
