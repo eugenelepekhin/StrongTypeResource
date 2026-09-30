@@ -6,7 +6,7 @@
 		<Nullable>enable</Nullable>
 		<PlatformTarget>AnyCPU</PlatformTarget>
 		<!-- Let's have even versions for stable released and odd versions for pre-releases -->
-		<Version>1.1.13</Version>
+		<Version>1.1.14</Version>
 		<AnalysisLevel>latest-all</AnalysisLevel>
 
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -26,7 +26,7 @@
 		<BuildOutputTargetFolder>tasks</BuildOutputTargetFolder>
 		<NoWarn>$(NoWarn);NU5100;NU5128</NoWarn>
 
-		<PackageReleaseNotes>Updating packages.</PackageReleaseNotes>
+		<PackageReleaseNotes>Allow validation on formatted strings when property is generated. Updating packages.</PackageReleaseNotes>
 		
 	</PropertyGroup>
 
